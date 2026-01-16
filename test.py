@@ -52,11 +52,11 @@ import typing
 
 L = 50
 H = 20
-with XDMFFile(MPI.COMM_WORLD, "mesh_biofilm.xdmf", "r") as xdmf:
+with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/elliptic_biofilm_mesh.xdmf", "r") as xdmf:
     mesh = xdmf.read_mesh(name = "mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
 
-inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
+inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5 # need to write these three lines so it knows what markers are what
 fdim = mesh.topology.dim - 1 
 mesh.topology.create_connectivity(fdim, mesh.topology.dim)
 
@@ -79,7 +79,7 @@ fdim = mesh.topology.dim - 1
 # shear velocity 
 def shear_velocity_f(x):
     values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)
-    values[0, :] = 1.5 
+    values[0, :] = 1500 
     values[1, :] = 0.0
     return values
 u_wall = Function(V)
@@ -182,7 +182,7 @@ plotter.add_title("Velocity field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/velocity_field.png")
+plotter.screenshot(f"{folder}/elliptic_velocity_field.png")
 plotter.close()
 
 # p plotting
@@ -196,7 +196,7 @@ plotter.add_title("Pressure field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/pressure_field.png")
+plotter.screenshot(f"{folder}/elliptic_pressure_field.png")
 plotter.close()
 
 print("plotting finished")
@@ -249,14 +249,14 @@ stress_mag_boundary = stress_mag_boundary[idx]
 stress_boundary = stress_boundary[idx]
 ds = np.sqrt(np.sum(np.diff(coords_boundary, axis=0)**2, axis=1))
 s = np.insert(np.cumsum(ds), 0, 0.0)
-# plt.plot(s, stress_mag_boundary, markersize=3)
-# plt.xlabel("Arc length along boundary")
-# plt.ylabel("Stress magnitude")
-# plt.title("Boundary stress")
-# plt.show()
+plt.plot(s, stress_mag_boundary, markersize=3)
+plt.xlabel("Arc length along boundary")
+plt.ylabel("Stress magnitude")
+plt.title("Boundary stress")
+plt.show()
 
 data = np.column_stack((coords_boundary[:, 0], coords_boundary[:, 1], stress_mag_boundary))
-np.savetxt(f"{folder}/boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
+np.savetxt(f"{folder}/elliptic_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
 
 topology_s, cell_types_s, geometry_s = vtk_mesh(T)
 grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
@@ -269,49 +269,8 @@ plotter.view_xy()
 
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/stress_field.png")
+plotter.screenshot(f"{folder}/elliptic_stress_field.png")
 plotter.close()
-
-# fdim = mesh.topology.dim - 1 
-# obstacle_facets = ft.find(obstacle_marker)
-# obstacle_dofs = locate_dofs_topological(T, fdim, obstacle_facets)
-# stress_obstacle = stress_vals[obstacle_dofs, :, :]
-# stress_obs_mag = np.linalg.norm(stress_obstacle, axis=(1, 2))
-# obstacle_coords = mesh.geometry.x[obstacle_dofs, :]
-
-# x_obs = obstacle_coords[:, 0]
-
-# # sort by x-position
-# sorted_idx = np.argsort(x_obs)
-# x_obs_sorted = x_obs[sorted_idx]
-# stress_obs_mag_sorted = stress_obs_mag[sorted_idx]
-
-# plt.figure(figsize=(6, 4))
-# plt.plot(x_obs_sorted, stress_obs_mag_sorted)
-# plt.xlabel("x-position along obstacle")
-# plt.ylabel("Stress magnitude")
-# plt.title("Stress magnitude on obstacle boundary")
-# plt.grid(True)
-# plt.tight_layout()
-# plt.show()
-
-
-# sorted_idx = np.argsort(obstacle_coords[:, 0])
-# coords_sorted = obstacle_coords[sorted_idx, :]
-# stress_sorted = stress_obs_mag[sorted_idx]
-
-# arc_length = np.zeros(len(coords_sorted))
-# for i in range(1, len(arc_length)):
-#     arc_length[i] = arc_length[i-1] + np.linalg.norm(coords_sorted[i] - coords_sorted[i-1])
-
-# plt.figure(figsize=(6,4))
-# plt.plot(arc_length, stress_sorted)
-# plt.xlabel("Arc length along obstacle")
-# plt.ylabel("Stress magnitude")
-# plt.title("Stress magnitude along obstacle boundary")
-# plt.grid(True)
-# plt.tight_layout()
-# plt.show()
 
 # endregion
 
