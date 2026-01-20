@@ -55,11 +55,24 @@ import gc
 # endregion
 
 mesh_folder = "Varying Height Meshes Meshes"
-bump_height = [5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
-bump_length = [15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0]
+#bump_height = [5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
+bump_height = [15.0]
+#bump_length = [15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0]
+#bump_length = [15.0, 16.0, 17.0]
+#bump_length = [18.0]
+#bump_length = [19.0, 20.0, 21.0]
+#bump_length = [22.0, 23.0, 24.0]
+bump_length = [25.0]
 mesh_files = [f"{mesh_folder}/biofilm_height_{h:.2f}_length_{l:.2f}.xdmf" for h, l in zip(bump_height, bump_length)]
 
 velocity_values = [10000, 11000, 12000]  # shear velocities to test
+
+if MPI.COMM_WORLD.rank == 0:
+    os.makedirs("simulation_results", exist_ok = True)
+    index_path = "simulation_results/index.csv"
+    if not os.path.exists(index_path):
+        with open(index_path, "w") as f:
+            f.write("height, length, velocity, file\n")
 
 all_stress =[]
 coords_boundary_ref = None
@@ -183,148 +196,6 @@ for height in bump_height:
 
     # endregion 
 
-    # region Plotting
-
-    # u plotting
-    # topology, cell_types, geometry = vtk_mesh(V)
-    # grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    # u_2d = u_sol.x.array.reshape((-1, mesh.geometry.dim))
-    # u_3d = np.zeros((u_2d.shape[0], 3), dtype=u_2d.dtype)
-    # u_3d[:, :2] = u_2d
-    # grid_u["u"] = u_3d
-    # grid_u["|u|"] = np.linalg.norm(u_2d, axis=1)
-
-    # plotter = pyvista.Plotter(off_screen=True)
-    # plotter.add_mesh(grid_u,scalars="|u|",cmap="viridis",show_edges=False)
-
-    # glyphs = grid_u.glyph(orient="u",scale=False,factor=0.05)
-    # plotter.add_mesh(glyphs, color="black")
-    # plotter.add_title("Velocity field")
-    # plotter.view_xy()
-    # folder = "steady_stokes_results"
-    # os.makedirs(folder, exist_ok=True)
-    # plotter.screenshot(f"{folder}/elliptic_velocity_field.png")
-    # plotter.close()
-
-    # p plotting
-    # topology_p, cell_types_p, geometry_p = vtk_mesh(Q)
-    # grid_p = pyvista.UnstructuredGrid(topology_p, cell_types_p, geometry_p)
-    # grid_p["p"] = p_sol.x.array
-
-    # plotter = pyvista.Plotter(off_screen=True)
-    # plotter.add_mesh(grid_p,scalars="p",cmap="coolwarm",show_edges=False)
-    # plotter.add_title("Pressure field")
-    # plotter.view_xy()
-    # folder = "steady_stokes_results"
-    # os.makedirs(folder, exist_ok=True)
-    # plotter.screenshot(f"{folder}/elliptic_pressure_field.png")
-    # plotter.close()
-
-    # print("plotting finished")
-
-    # endregion
-
-    # region stress
-
-    #     dim = mesh.geometry.dim
-    #     I = Identity(dim)
-    #     strain_rate = sym(grad(u_sol))
-    #     sigma_expr = -p_sol*I + 2.0*mu*strain_rate
-
-    #     tensor_el = element("Lagrange", mesh.basix_cell(), 1, shape=(dim, dim))
-    #     T = functionspace(mesh, tensor_el)
-    #     stress = Function(T)
-
-    #     sigma_trial = TrialFunction(T)
-    #     w = TestFunction(T)
-
-    #     a_proj = inner(sigma_trial, w) * dx
-    #     L_proj = inner(sigma_expr, w) * dx
-
-    #     stress_problem = dolfinx.fem.petsc.LinearProblem(
-    #         a_proj,
-    #         L_proj,
-    #         bcs=[],  # no Dirichlet BCs for stress
-    #         petsc_options={"ksp_type": "gmres", "pc_type": "lu"},
-    #         petsc_options_prefix="solver_"
-    #     )
-    #     stress = stress_problem.solve()
-
-    #     stress_coords = T.tabulate_dof_coordinates() #this line is new
-
-    #     stress_vals = stress.x.array.reshape((-1, dim, dim))
-    #     stress_magnitude = np.linalg.norm(stress_vals, axis=(1,2))
-
-    #     x = stress_coords[:, 0] #these three lines are new
-    #     y = stress_coords[:, 1]
-    #     s = stress_magnitude
-
-    #     fdim = mesh.topology.dim - 1 #this next block is new
-    #     boundary_facets = ft.find(obstacle_marker)
-    #     boundary_dofs = locate_dofs_topological(T, fdim, boundary_facets)
-    #     stress_boundary = stress_vals[boundary_dofs]
-    #     coords_boundary = stress_coords[boundary_dofs]
-    #     stress_mag_boundary = np.linalg.norm(stress_boundary, axis=(1,2))
-    #     idx = np.argsort(coords_boundary[:, 0])
-    #     coords_boundary = coords_boundary[idx]
-    #     stress_mag_boundary = stress_mag_boundary[idx]
-    #     stress_boundary = stress_boundary[idx]
-    #     ds = np.sqrt(np.sum(np.diff(coords_boundary, axis=0)**2, axis=1))
-    #     s = np.insert(np.cumsum(ds), 0, 0.0)
-    #     plt.plot(s, stress_mag_boundary, markersize=3, label=f"height  = {mesh_heights}")
-
-    #     # this bit is changed it used to be see below
-    #     if coords_boundary_ref is None:
-    #         coords_boundary_ref = coords_boundary
-    #         all_stress.append(stress_mag_boundary)
-    #     else:
-    #         interp_func = interp1d(coords_boundary[:,0], stress_mag_boundary, kind='linear', fill_value='extrapolate')
-    #         stress_on_ref = interp_func(coords_boundary_ref[:,0])
-    #         all_stress.append(stress_on_ref)
-    #     # if coords_boundary_ref is None:
-    #     #     coords_boundary_ref = coords_boundary
-    #     # all_stress.append(stress_mag_boundary)
-
-
-    # stress_matrix = np.column_stack(all_stress)
-
-    # # Combine with x, y
-    # output_data = np.column_stack((coords_boundary_ref[:, 0], coords_boundary_ref[:, 1], stress_matrix))
-
-    # # Create headers
-    # headers = ["x", "y"] + [f"stress_for_biofilm_height{h}" for h in mesh_heights]
-
-    # np.savetxt("simulation_results/biofilm_height_stresses_all.csv",
-    #            output_data, delimiter=",", header=",".join(headers), comments="")
-
-    # plt.xlabel("Arc length along boundary")
-    # plt.ylabel("Stress magnitude")
-    # plt.title("Boundary stress")
-    # plt.legend()
-    # plt.show()
-
-    # # data = np.column_stack((coords_boundary[:, 0], coords_boundary[:, 1], stress_mag_boundary))
-    # # np.savetxt(f"{folder}/elliptic_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
-
-    # # topology_s, cell_types_s, geometry_s = vtk_mesh(T)
-    # # grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
-    # # grid_s["s_mag"] = stress_magnitude
-
-    # # plotter = pyvista.Plotter(off_screen=True)
-    # # plotter.add_mesh(grid_s,scalars="s_mag",cmap="coolwarm",show_edges=False)
-    # # plotter.add_title("Stress Magnitude field")
-    # # plotter.view_xy()
-
-    # # folder = "steady_stokes_results"
-    # # os.makedirs(folder, exist_ok=True)
-    # # plotter.screenshot(f"{folder}/elliptic_stress_field.png")
-    # # plotter.close()
-
-    # endregion
-
-    # region stress
-
-
             dim = mesh.geometry.dim
             I = Identity(dim)
             strain_rate = sym(grad(u_sol))
@@ -351,18 +222,8 @@ for height in bump_height:
 
             # Coordinates of stress DOFs
             stress_coords = T.tabulate_dof_coordinates()
-            stress_vals = stress.x.array.reshape((-1, dim, dim))
+            stress_vals = stress.x.array.copy().reshape((-1, dim, dim))
             stress_magnitude = np.linalg.norm(stress_vals, axis=(1,2))
-
-            # topology_s, cell_types_s, geometry_s = vtk_mesh(T)
-            # grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
-            # grid_s["s_mag"] = stress_magnitude
-
-            # plotter = pyvista.Plotter(off_screen=False)
-            # plotter.add_mesh(grid_s,scalars="s_mag",cmap="coolwarm",show_edges=False)
-            # plotter.add_title(f"Stress Magnitude field, biofilm height = {height}")
-            # plotter.view_xy()
-            # plotter.show()
 
             # Get obstacle (biofilm) boundary
             fdim = mesh.topology.dim - 1
@@ -377,89 +238,31 @@ for height in bump_height:
             coords_boundary = coords_boundary[idx_sort]
             stress_mag_boundary = stress_mag_boundary[idx_sort]
 
-            # Compute cumulative arc length along boundary
-            ds = np.sqrt(np.sum(np.diff(coords_boundary, axis=0)**2, axis=1))
-            s_curr = np.insert(np.cumsum(ds), 0, 0.0)
+            if mesh.comm.rank ==0:
+                os.makedirs("simulation_results/data", exist_ok=True)
+                out_name = (f"stress_height{height:.2f}"f"_length{length:.2f}"f"_velocity{shear_val:.2f}")
+                out_path = os.path.join("simulation_results/data", out_name)
 
-            num_points = 200  # number of points along boundary for uniform comparison
+                csv_data = np.column_stack((coords_boundary[:,0], coords_boundary[:,1], stress_mag_boundary))
 
-            if coords_boundary_ref is None:
-                # First mesh: define reference boundary
-                coords_boundary_ref = coords_boundary
-                s_ref = np.linspace(0, s_curr[-1], num_points)
-                interp_func = interp1d(s_curr, stress_mag_boundary, kind='linear')
-                stress_on_ref = interp_func(s_ref)
-            else:
-                # Interpolate current stress onto reference boundary
-                interp_func = interp1d(s_curr, stress_mag_boundary, kind='linear', fill_value='extrapolate')
-                stress_on_ref = interp_func(s_ref)
+                np.savetxt(out_path, csv_data, delimiter=",", header="x,y,stress", comments="")
+            if mesh.comm.rank==0:
+                with open(index_path, "a") as f:
+                    f.write(f"{height}, {length}, {shear_val},{out_name}\n")
 
-            all_stress.append(stress_on_ref)
-
-            del problem
-            del u_sol, p_sol
-            del u_full, p_full
-            del V, Q, Z
-            del mpc_V, mpc_p
-            del mesh
-            del ft
-            gc.collect()
+            # del problem
+            # del u_sol, p_sol
+            # del u_full, p_full
+            # del V, Q, Z
+            # del mpc_V, mpc_p
+            # del mesh
+            # del ft
+            # del stress
+            # del stress_vals
+            # del stress_mag_boundary
+            # del coords_boundary
 
 
 # endregion
-
-# region plotting (after all meshes are processed)
-# import matplotlib.pyplot as plt
-# plt.figure()
-# for i, h in enumerate(height):
-#     plt.plot(s_ref, all_stress[i], label=f"height={h}")
-# plt.xlabel("Arc length along boundary")
-# plt.ylabel("Stress magnitude")
-# plt.title("Biofilm boundary stress")
-# plt.legend()
-# plt.show()
-
-# Save to CSV
-# import numpy as np
-# output_data = np.column_stack([s_ref] + all_stress)
-# headers = ["arc_length"] + [f"stress_height_{h}" for h in mesh_heights]
-# np.savetxt("simulation_results/biofilm_height_stresses_all.csv", output_data,
-#     delimiter=",", header=",".join(headers), comments="")
-
-import numpy as np
-import os
-
-# Make sure coords_boundary_ref is (num_points, 2) from your previous processing
-# s_ref is optional now; we'll use coords_boundary_ref[:,0] and coords_boundary_ref[:,1]
-
-# Prepare header
-headers = ["x", "y"]
-stress_combinations = []
-
-for height in bump_height:
-    for length in bump_length:
-        for shear_val in velocity_values:
-            headers.append(f"stress_h{height}_l{length}_v{shear_val}")
-            stress_combinations.append((height, length, shear_val))
-
-# Stack data: start with coordinates
-csv_data = [coords_boundary_ref[:, 0], coords_boundary_ref[:, 1]]
-
-# Then append all stress columns in the same order
-for stress_on_ref in all_stress:
-    csv_data.append(stress_on_ref)
-
-# Combine into a 2D array
-csv_data = np.column_stack(csv_data)
-
-# Make output folder
-os.makedirs("simulation_results", exist_ok=True)
-
-# Save CSV
-np.savetxt("simulation_results/biofilm_stress_coords_all.csv", csv_data,
-           delimiter=",", header=",".join(headers), comments="")
-
-print("CSV saved: coordinates + stress for all height/length/velocity combinations")
-
 
 print("end")
