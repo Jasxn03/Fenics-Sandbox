@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="6108" NodesPerElement="9">
+        <DataItem Dimensions="6108 9" NumberType="Int" Format="HDF">biofilm_height_6.00_length_18.00.h5:/Mesh/mesh/topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XY">
+        <DataItem Dimensions="24829 2" Format="HDF">biofilm_height_6.00_length_18.00.h5:/Mesh/mesh/geometry</DataItem>
+      </Geometry>
+    </Grid>
+    <Grid Name="Facet markers" GridType="Uniform">
+      <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
+      <Topology TopologyType="Edge_3" NumberOfElements="396" NodesPerElement="3">
+        <DataItem Dimensions="396 3" NumberType="Int" Format="HDF">biofilm_height_6.00_length_18.00.h5:/MeshTags/Facet markers/topology</DataItem>
+      </Topology>
+      <Attribute Name="Facet markers" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="396 1" Format="HDF">biofilm_height_6.00_length_18.00.h5:/MeshTags/Facet markers/Values</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

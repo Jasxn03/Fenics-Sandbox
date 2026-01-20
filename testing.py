@@ -57,7 +57,7 @@ velocity_values = [10000]
 
 folder = "simulation_results"
 Path(folder).mkdir(exist_ok=True)
-output_csv = Path(folder) / "cluster_boundary_stress_all.csv"
+output_csv = Path(folder) / "ellpitic_boundary_stress_all.csv"
 
 all_stress =[]
 coords_boundary_ref = None
@@ -67,7 +67,7 @@ for shear_val in velocity_values:
     print(f"running with shear velocity {shear_val}")
     L = 50
     H = 20
-    with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/cluster_biofilm_mesh.xdmf", "r") as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/elliptic_biofilm_mesh.xdmf", "r") as xdmf:
         mesh = xdmf.read_mesh(name = "mesh")
         ft = xdmf.read_meshtags(mesh, name="Facet markers")
 
@@ -280,7 +280,7 @@ output_data = np.column_stack((coords_boundary_ref[:, 0], coords_boundary_ref[:,
 # Create headers
 headers = ["x", "y"] + [f"stress_shear_{v}" for v in shear_velocities]
 
-np.savetxt("simulation_results/cluster_boundary_stress_all.csv",
+np.savetxt("simulation_results/elliptic_boundary_stress_all.csv",
            output_data, delimiter=",", header=",".join(headers), comments="")
 
 plt.xlabel("Arc length along boundary")

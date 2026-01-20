@@ -14,7 +14,7 @@ mesh_comm = MPI.COMM_WORLD
 model_rank = 0
 if mesh_comm.rank == model_rank:
     rectangle = gmsh.model.occ.addRectangle(0, 0, 0, L, H, tag=1)
-    ellipse_loop = gmsh.model.occ.addEllipse(L/2, 0, 0, L/2, 5, 0)
+    ellipse_loop = gmsh.model.occ.addEllipse(L/2, 0, 0, 16, 5, 0)
     biofilm_boundary = gmsh.model.occ.addCurveLoop([ellipse_loop])
     biofilm_surface = gmsh.model.occ.addPlaneSurface([biofilm_boundary])
     fluid = gmsh.model.occ.cut([(gdim, rectangle)], [(gdim, biofilm_surface)])
