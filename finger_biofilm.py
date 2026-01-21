@@ -66,32 +66,53 @@ if mesh_comm.rank == model_rank:
     biofilm_boundary_curves.append(left_line)
     biofilm_boundary = gmsh.model.occ.addCurveLoop(biofilm_boundary_curves)
     biofilm_surface = gmsh.model.occ.addPlaneSurface([biofilm_boundary])
-    fluid = gmsh.model.occ.cut([(gdim, rectangle)], [(gdim, biofilm_surface)])
     gmsh.model.occ.synchronize()
-fluid_marker = 1
+    fluid = rectangle
+    gmsh.model.occ.synchronize()
+    all_surfaces = [(gdim, biofilm_surface)]
+    whole_domain = gmsh.model.occ.fragment([(gdim, fluid)], all_surfaces)
+    gmsh.model.occ.synchronize()
+
 if mesh_comm.rank == model_rank:
-    volumes = gmsh.model.getEntities(gdim)
-    assert len(volumes) == 1
-    gmsh.model.addPhysicalGroup(volumes[0][0], [volumes[0][1]], fluid_marker)
-    gmsh.model.setPhysicalName(volumes[0][0], fluid_marker, "Fluid")
+    surfaces = gmsh.model.getEntities(2)
+    assert len(surfaces) == 2
+    areas =[]
+    for dim, tag in surfaces:
+        area = gmsh.model.occ.getMass(dim, tag)
+        areas.append((area, tag))
+    areas.sort()
+    biofilm_tag = areas[0][1]
+    fluid_tag = areas[1][1]
+
+    gmsh.model.addPhysicalGroup(2, [fluid_tag], 1)
+    gmsh.model.setPhysicalName(2,1, "Fluid")
+    gmsh.model.addPhysicalGroup(2, [biofilm_tag], 6)
+    gmsh.model.setPhysicalName(2,6,"Biofilm")
 
 inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
 inflow, outflow, walls, obstacle = [], [], [], []
+obstacle_candidates = []
+tol = 1e-6
+
 if mesh_comm.rank == model_rank:
-    boundaries = gmsh.model.getBoundary(volumes, oriented=False)
-    for boundary in boundaries:
-        for dim, tag in boundaries:
-            xmin, ymin, zmin, xmax, ymax, zmax = gmsh.model.getBoundingBox(dim, tag)
-            if abs(xmin) < 1e-6 and abs(xmax) < 1e-6:
-                inflow.append(tag)
-            elif abs(xmin - L) < 1e-6 and abs(xmax - L) < 1e-6:
-                outflow.append(tag)
-            elif abs(ymin) < 1e-6 and abs(ymax) < 1e-6:
-                walls.append(tag)
-            elif abs(ymin - H) < 1e-6 and abs(ymax - H) < 1e-6:
-                walls.append(tag)
-            else:
-                obstacle.append(tag)
+    curves = gmsh.model.getEntities(1)
+    fluid_boundary = gmsh.model.getBoundary([(2, fluid_tag)], oriented=False)
+    for dim, curve in curves:
+        xmin, ymin, zmin, xmax, ymax, zmax = gmsh.model.getBoundingBox(1,curve)
+        left = abs(xmin) < tol and abs(xmax) < tol
+        right = abs(xmin-L) < tol and abs(xmax-L) < tol
+        top = abs(ymin-H) < tol and abs(ymax-H) < tol
+        if left:
+            inflow.append(curve)
+        elif right:
+            outflow.append(curve)
+        elif top:
+            walls.append(curve)
+    for dim, tag in fluid_boundary:
+        if dim == 1:
+                obstacle_candidates.append(tag)
+    used_curves = set(inflow) |set(outflow) |set(walls)
+    obstacle = [c for c in obstacle_candidates if c not in used_curves]
     gmsh.model.addPhysicalGroup(1, inflow, inlet_marker)
     gmsh.model.setPhysicalName(1, inlet_marker, "Inlet")
     gmsh.model.addPhysicalGroup(1, outflow, outlet_marker)

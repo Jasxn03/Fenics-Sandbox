@@ -52,7 +52,7 @@ import typing
 
 L = 50
 H = 20
-with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/elliptic_biofilm_mesh.xdmf", "r") as xdmf:
+with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/finger_biofilm_mesh.xdmf", "r") as xdmf:
     mesh = xdmf.read_mesh(name = "mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
 
