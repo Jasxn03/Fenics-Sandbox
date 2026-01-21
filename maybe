@@ -46,9 +46,7 @@ from dolfinx import plot
 import typing
 from dolfinx.mesh import create_submesh
 
-# -----------------------------
-# User parameters
-# -----------------------------
+
 mesh_file = "Biofilm Meshes/finger_biofilm_mesh.xdmf"
 output_folder = "steady_stokes_results"
 os.makedirs(output_folder, exist_ok=True)
@@ -58,24 +56,16 @@ max_iterations = 5
 stress_threshold = 0.1
 inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
 
-# -----------------------------
-# Load initial mesh
-# -----------------------------
 with XDMFFile(MPI.COMM_WORLD, mesh_file, "r") as xdmf:
     mesh = xdmf.read_mesh(name="mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
 
-# -----------------------------
-# Function for one iteration
-# -----------------------------
 def remesh_iteration(mesh, ft):
-    # -----------------------------
-    # Mesh topology
+
     fdim = mesh.topology.dim - 1
     mesh.topology.create_connectivity(fdim, mesh.topology.dim)
 
-    # -----------------------------
-    # Function spaces
+
     v_cg2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
     s_cg1 = element("Lagrange", mesh.basix_cell(), 1)
     V = functionspace(mesh, v_cg2)
@@ -83,15 +73,10 @@ def remesh_iteration(mesh, ft):
     Z = MixedFunctionSpace(V,Q)
     x = SpatialCoordinate(mesh)
     n = FacetNormal(mesh)
-
-    # -----------------------------
-    # Physical constants
     mu = Constant(mesh, PETSc.ScalarType(0.001))  
     rho = Constant(mesh, PETSc.ScalarType(1))
     f = Constant(mesh, (0.0,0.0))
 
-    # -----------------------------
-    # Boundary conditions
     def shear_velocity_f(x):
         values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)
         values[0, :] = 1500
@@ -118,8 +103,6 @@ def remesh_iteration(mesh, ft):
     dof_p_ref = np.array([np.argmin(dist2)], dtype=np.int32)
     bcp_ref = dirichletbc(PETSc.ScalarType(0), dof_p_ref, Q)
 
-    # -----------------------------
-    # MPCs (optional)
     def periodic_boundary(x):
         return (x[0] == 0.0) | (x[0] == L_const)
     def periodic_relation(x):
@@ -138,8 +121,6 @@ def remesh_iteration(mesh, ft):
 
     mpc = [mpc_V, mpc_p]
 
-    # -----------------------------
-    # Solve Stokes
     (u, p) = TrialFunctions(Z)
     (v, q) = TestFunctions(Z)
 
@@ -163,8 +144,6 @@ def remesh_iteration(mesh, ft):
     mpc_p.backsubstitution(p_sol)
     print("Max velocity:", np.max(u_sol.x.array))
 
-    # -----------------------------
-    # Compute stress
     dim = mesh.geometry.dim
     I = Identity(dim)
     strain_rate = sym(grad(u_sol))
@@ -188,8 +167,6 @@ def remesh_iteration(mesh, ft):
     stress_vals = stress.x.array.reshape((-1, dim, dim))
     stress_mag = np.linalg.norm(stress_vals, axis=(1,2))
 
-    # -----------------------------
-    # Identify failed cells
     mesh.topology.create_connectivity(mesh.topology.dim-1, mesh.topology.dim)
     boundary_facets = ft.find(obstacle_marker)
     facet_to_cell = mesh.topology.connectivity(mesh.topology.dim-1, mesh.topology.dim)
@@ -213,16 +190,14 @@ def remesh_iteration(mesh, ft):
     if len(failed_cells) == 0:
         return None  # no remesh needed
 
-    # -----------------------------
-    # Create new submesh
+
     all_cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
     keep_cells = np.setdiff1d(all_cells, failed_cells)
     submesh, entity_map, vertex_map, node_map = create_submesh(mesh, mesh.topology.dim, keep_cells)
 
     return submesh
 
-# -----------------------------
-# Main loop
+
 for step in range(max_iterations):
     print(f"\n=== Step {step+1} ===")
     new_mesh = remesh_iteration(mesh, ft)
@@ -231,12 +206,12 @@ for step in range(max_iterations):
         break
     mesh = new_mesh
 
-    # Optional: visualize mesh
     topology, cell_types, geometry = vtk_mesh(mesh)
     grid = pv.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pv.Plotter()
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
     plotter.show()
+
 
 
