@@ -4,6 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd 
+from scipy.interpolate import griddata
 
 theta = 1
 mu = 5
@@ -23,14 +24,19 @@ for t in range(1,N):
 plt.plot(np.linspace(0,T,N),X)
 plt.xlabel("t")
 plt.ylabel("X")
+plt.title("OU process")
 plt.show()
 
 # i can compute stress on my biofilm so i can choose a single point and i have stress for shear velocity 1500 (i also have 0 stress for 0 velocity)
 # now lets say i have linear relationship stress = m*velocity + b 
 # i need to take my X[t] and put this into my linear relationship
 
-m = 1
-b = 1 
+df = pd.read_csv("steady_stokes_results/uneven_boundary_stress.csv")
+df["m"] = df["stress_mag"] / 1500
+df["b"] = 0.0
+
+m = df["m"].iloc[0]
+b = 0
 
 def linear_relationship(x):
     stress = m * x + b
@@ -44,11 +50,12 @@ for i in range(N):
 plt.plot(np.linspace(0,T,N), s)
 plt.xlabel("t")
 plt.ylabel("s")
+plt.title("Stress Time Series")
 plt.show()
 
 # now if i have multiple points, i have multiple linear relationships. i can create some sort of 2d map?
 
-df = pd.read_csv("steady_stokes_results/elliptic_boundary_stress.csv")
+df = pd.read_csv("steady_stokes_results/uneven_boundary_stress.csv")
 df["m"] = df["stress_mag"] / 1500
 df["b"] = 0.0
 
@@ -69,4 +76,21 @@ plt.colorbar(label="stress")
 plt.xlabel("time")
 plt.ylabel("biofilm point index")
 plt.title("Stress fluctuations on biofilm")
+plt.show()
+
+x = df["x"].to_numpy()
+y = df["y"].to_numpy()
+grid_x, grid_y = np.meshgrid(np.linspace(x.min(), x.max(), 100),
+                             np.linspace(y.min(), y.max(), 50)) 
+
+stress_at_t = stress_time[:, -1]
+
+grid_stress = griddata((x, y), stress_at_t, (grid_x, grid_y), method='cubic')
+
+plt.figure(figsize=(6,4))
+plt.pcolormesh(grid_x, grid_y, grid_stress, shading='auto', cmap='viridis')
+plt.colorbar(label='Stress')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title(f'Biofilm stress at t={T:.2f}s')
 plt.show()
