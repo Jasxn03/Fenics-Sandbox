@@ -73,6 +73,35 @@ inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
 # region Functions 
 from collections import deque
 
+def plot_stress_pyvista(mesh, stress_cell, step):
+    if mesh.comm.rank != 0:
+        return
+
+    import pyvista as pv
+    import dolfinx.plot
+    import numpy as np
+    import os
+
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cell_indices = np.arange(num_cells, dtype=np.int32)
+
+    topology, cell_types, geometry = dolfinx.plot.vtk_mesh(
+        mesh, mesh.topology.dim, cell_indices
+    )
+
+    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+
+    grid.cell_data["StressMagnitude"] = stress_cell.x.array.copy()
+
+    folder = "erosion"
+    os.makedirs(folder, exist_ok=True)
+
+    filename = os.path.join(folder, f"stress_iteration_{step+1}.vtu")
+    grid.save(filename)
+
+    print(f"Saved stress field for iteration {step+1} → {filename}")
+
+
 def remove_floating_biofilm(mesh, ct, mu_field, biofilm_marker=6):
     dim = mesh.topology.dim
     mesh.topology.create_connectivity(dim, 0)
@@ -316,8 +345,29 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
         petsc_options_prefix="solver_"
     )
     stress = stress_problem.solve()
+
+
+
+    # --- Compute stress magnitude at DOFs ---
     stress_vals = stress.x.array.reshape((-1, dim, dim))
-    stress_mag = np.linalg.norm(stress_vals, axis=(1,2))
+    stress_mag_dofs = np.linalg.norm(stress_vals, axis=(1, 2))
+
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cell_to_vertex = mesh.topology.connectivity(mesh.topology.dim, 0)
+    stress_mag_cell = np.zeros(num_cells)
+
+    for c in range(num_cells):
+        vertices = cell_to_vertex.links(c)  # vertices of this cell
+        dofs = []
+        for v in vertices:
+            # For CG1 tensor, each vertex contributes dim*dim DOFs
+            dofs.extend([v * dim * dim + i for i in range(dim*dim)])
+        stress_mag_cell[c] = np.mean(stress_mag_dofs[dofs])
+
+    # --- Wrap as DG0 Function for plotting ---
+    Q0 = functionspace(mesh, ("DG", 0))
+    stress_cell = Function(Q0)
+    stress_cell.x.array[:] = stress_mag_cell
 
     mesh.topology.create_connectivity(dim, dim-1)
     mesh.topology.create_connectivity(dim-1, dim)
@@ -337,10 +387,13 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
     high_stress_fluid_cells = set()
     boundary_facets = ft.find(obstacle_marker)
     for f in boundary_facets:
-        dofs = locate_dofs_topological(T, dim-1, np.array([f], dtype = np.int32))
-        if np.mean(stress_mag[dofs]) > stress_threshold:
-            owners = facet_to_cell.links(f)
-            high_stress_fluid_cells.update(owners)
+            # get the cells that share this facet
+        owners = facet_to_cell.links(f)
+        # check if any of these cells is a fluid cell and above threshold
+        for c in owners:
+            if ct.values[c] == 1:  # fluid cell
+                if stress_mag_cell[c] > stress_threshold:
+                    high_stress_fluid_cells.add(c)
 
     # neighbours that only share an edge
     neighboring_biofilm_cells = set()
@@ -413,9 +466,9 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
 
     # --- Create submesh without these biofilm cells ---
     if len(neighboring_biofilm_cells) == 0:
-        return None, u_sol, p_sol, mu_field, ft , ct  # nothing to remove
+        return None, u_sol, p_sol, mu_field, ft , ct, stress_mag_cell  # nothing to remove
 
-    return mesh, u_sol, p_sol, mu_field, ft, ct, stress_mag
+    return mesh, u_sol, p_sol, mu_field, ft, ct, stress_mag_cell
 
 #endregion
 
@@ -423,16 +476,18 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
 for step in range(max_iterations):
     print(f"\n=== Step {step+1} ===")
     ct_current, mu_field_prev = remove_floating_biofilm(mesh, ct_current, mu_field_prev, biofilm_marker=6)
-    mesh, u_prev, p_prev, mu_field_prev, ft_current, ct_current, stress_mag = remesh_iteration(
+
+    mesh, u_prev, p_prev, mu_field_prev, ft_current, ct_current, stress_mag_cell = remesh_iteration(
         mesh, ft_current, ct_current, u_prev, p_prev, mu_prev = mu_field_prev
     )
+    # Re-wrap stress magnitude as DG0 function
+    Q0 = functionspace(mesh, ("DG", 0))
+    stress_cell = Function(Q0)
+    stress_cell.x.array[:] = stress_mag_cell
+
+    plot_stress_pyvista(mesh, stress_cell, step)
     plot_biofilm_fluid_pyvista(mesh, ct_current, step)
 
     if len(ct_current.find(6)) == 0:
         print("All biofilm removed, stopping simulation.")
         break
-
-
-
-
-

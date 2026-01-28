@@ -1,6 +1,7 @@
-# this is the same as 6 (steady stokes solver) but this time it reads a mesh that is generated elsewhere
+# this is the same as testing, but i want to try and use stochastic shear velocity instead
 
 # region Imports
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -88,12 +89,38 @@ n = FacetNormal(mesh)
 
 fdim = mesh.topology.dim - 1
 
-# shear velocity 
+# shear velocity --- this is the bit i probably want to change 
+# def shear_velocity_f(x):
+#     values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)    
+#     values[0, :] = 1500 
+#     values[1, :] = 0.0
+#     return values
+
+# turbulent shear 
+# def shear_velocity_f(x):
+#     values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)
+#     y = x[1]
+#     values[0, :] = (150 / 0.41) * np.log((y + 0.01) / 0.01)
+#     values[1, :] = 0.0
+#     return values
+
+# stochastic shear
+sigma = 300.0
+n_modes = 20
+rng = np.random.default_rng(seed=3)
+k_vals = 2*np.pi*np.arange(1, n_modes+1) / L
+phases = rng.uniform(0, 2*np.pi, size=n_modes)
+amps = sigma / np.sqrt(n_modes) * rng.normal(size=n_modes)
+
 def shear_velocity_f(x):
     values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)
-    values[0, :] = 1500 
+    u = np.full(x.shape[1], 1500.0)
+    for k, A, phi in zip(k_vals, amps, phases):
+        u += A * np.sin(k * x[0] + phi)
+    values[0, :] = u
     values[1, :] = 0.0
     return values
+
 u_wall = Function(V)
 u_wall.interpolate(shear_velocity_f)
 bc_shear_velocity = dirichletbc(
@@ -209,7 +236,7 @@ plotter.add_title("Velocity field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/elliptic_velocity_field.png")
+plotter.screenshot(f"{folder}/arc_velocity_field.png")
 plotter.close()
 
 
@@ -242,7 +269,7 @@ plotter.add_mesh(glyphs, color="black")
 
 plotter.add_title("Velocity field (biofilm masked)")
 plotter.view_xy()
-plotter.screenshot(f"{folder}/elliptic_velocity_field_masked.png")
+plotter.screenshot(f"{folder}/arc_velocity_field_masked.png")
 plotter.close()
 
 
@@ -257,7 +284,7 @@ plotter.add_title("Pressure field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/elliptic_pressure_field.png")
+plotter.screenshot(f"{folder}/arc_pressure_field.png")
 plotter.close()
 
 print("plotting finished")
@@ -317,7 +344,7 @@ plt.title("Boundary stress")
 plt.show()
 
 data = np.column_stack((coords_boundary[:, 0], coords_boundary[:, 1], stress_mag_boundary))
-np.savetxt(f"{folder}/elliptic_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
+np.savetxt(f"{folder}/cluster_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
 
 topology_s, cell_types_s, geometry_s = vtk_mesh(T)
 grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
@@ -330,7 +357,7 @@ plotter.view_xy()
 
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/elliptic_stress_field.png")
+plotter.screenshot(f"{folder}/cluster_stress_field.png")
 plotter.close()
 
 # endregion

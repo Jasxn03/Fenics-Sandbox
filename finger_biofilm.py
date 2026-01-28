@@ -72,6 +72,21 @@ if mesh_comm.rank == model_rank:
     all_surfaces = [(gdim, biofilm_surface)]
     whole_domain = gmsh.model.occ.fragment([(gdim, fluid)], all_surfaces)
     gmsh.model.occ.synchronize()
+    
+    # new_entities = whole_domain[0]
+    # areas = []
+    # for dim, tag in new_entities:
+    #     area = gmsh.model.occ.getMass(dim, tag)
+    #     areas.append((area, tag))
+    # areas.sort()  # smallest is biofilm
+    # biofilm_tag = areas[0][1]
+    # fluid_tag = areas[1][1]
+
+    # gmsh.model.addPhysicalGroup(2, [fluid_tag], 1)
+    # gmsh.model.setPhysicalName(2,1,"Fluid")
+    # gmsh.model.addPhysicalGroup(2, [biofilm_tag], 6)
+    # gmsh.model.setPhysicalName(2,6,"Biofilm")
+
 
 if mesh_comm.rank == model_rank:
     surfaces = gmsh.model.getEntities(2)
@@ -151,6 +166,8 @@ mesh = mesh_data.mesh
 assert mesh_data.facet_tags is not None
 ft = mesh_data.facet_tags
 ft.name = "Facet markers"
+ct = mesh_data.cell_tags
+ct.name = "Cell tags"
 
 # this is the bit that writes mesh to file
 
@@ -160,7 +177,8 @@ file_path = os.path.join(folder, "finger_biofilm_mesh.xdmf")
 with XDMFFile(mesh_comm, file_path, "w") as xdmf:
     xdmf.write_mesh(mesh)
     xdmf.write_meshtags(ft, mesh.geometry)
+    xdmf.write_meshtags(ct, mesh.geometry)
 
 gmsh.finalize()
 
-print("Mesh generation complete.")
+print("done")

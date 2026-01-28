@@ -4,28 +4,28 @@
   <Domain>
     <Grid Name="mesh" GridType="Uniform">
       <Topology TopologyType="Quadrilateral_9" NumberOfElements="11920" NodesPerElement="9">
-        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">elliptic_biofilm_mesh.h5:/Mesh/mesh/topology</DataItem>
+        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/topology</DataItem>
       </Topology>
       <Geometry GeometryType="XY">
-        <DataItem Dimensions="48061 2" Format="HDF">elliptic_biofilm_mesh.h5:/Mesh/mesh/geometry</DataItem>
+        <DataItem Dimensions="48061 2" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/geometry</DataItem>
       </Geometry>
     </Grid>
     <Grid Name="Facet markers" GridType="Uniform">
       <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
       <Topology TopologyType="Edge_3" NumberOfElements="512" NodesPerElement="3">
-        <DataItem Dimensions="512 3" NumberType="Int" Format="HDF">elliptic_biofilm_mesh.h5:/MeshTags/Facet markers/topology</DataItem>
+        <DataItem Dimensions="512 3" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Facet markers/topology</DataItem>
       </Topology>
       <Attribute Name="Facet markers" AttributeType="Scalar" Center="Cell">
-        <DataItem Dimensions="512 1" Format="HDF">elliptic_biofilm_mesh.h5:/MeshTags/Facet markers/Values</DataItem>
+        <DataItem Dimensions="512 1" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Facet markers/Values</DataItem>
       </Attribute>
     </Grid>
     <Grid Name="Cell tags" GridType="Uniform">
       <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
       <Topology TopologyType="Quadrilateral_9" NumberOfElements="11920" NodesPerElement="9">
-        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">elliptic_biofilm_mesh.h5:/MeshTags/Cell tags/topology</DataItem>
+        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/topology</DataItem>
       </Topology>
       <Attribute Name="Cell tags" AttributeType="Scalar" Center="Cell">
-        <DataItem Dimensions="11920 1" Format="HDF">elliptic_biofilm_mesh.h5:/MeshTags/Cell tags/Values</DataItem>
+        <DataItem Dimensions="11920 1" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/Values</DataItem>
       </Attribute>
     </Grid>
   </Domain>

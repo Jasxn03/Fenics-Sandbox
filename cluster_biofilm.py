@@ -106,6 +106,8 @@ mesh = mesh_data.mesh
 assert mesh_data.facet_tags is not None
 ft = mesh_data.facet_tags
 ft.name = "Facet markers"
+ct = mesh_data.cell_tags
+ct.name = "Cell tags"
 
 # this is the bit that writes mesh to file
 
@@ -115,6 +117,7 @@ file_path = os.path.join(folder, "cluster_biofilm_mesh.xdmf")
 with XDMFFile(mesh_comm, file_path, "w") as xdmf:
     xdmf.write_mesh(mesh)
     xdmf.write_meshtags(ft, mesh.geometry)
+    xdmf.write_meshtags(ct, mesh.geometry)
 
 gmsh.finalize()
 

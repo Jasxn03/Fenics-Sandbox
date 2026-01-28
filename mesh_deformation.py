@@ -51,8 +51,8 @@ from dolfinx.mesh import create_submesh
 
 # endregion
 
-L = 50
-H = 20
+L_const = 50
+H_const = 20
 max_iterations = 5
 stress_threshold = 0.1
 with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/finger_biofilm_mesh.xdmf", "r") as xdmf:
@@ -75,8 +75,8 @@ for step in range(max_iterations):
     V = functionspace(mesh, v_cg2)
     Q = functionspace(mesh, s_cg1)
     Z = MixedFunctionSpace(V,Q)
-    x = SpatialCoordinate(mesh)
-    n = FacetNormal(mesh)
+    # x = SpatialCoordinate(mesh)
+    # n = FacetNormal(mesh)
 
     fdim = mesh.topology.dim - 1
 
@@ -101,8 +101,8 @@ for step in range(max_iterations):
     bcu = bc_shear_velocity, bcu_obstacle
 
     coords = mesh.geometry.x
-    x_target = L / 2
-    y_target = H
+    x_target = L_const / 2
+    y_target = H_const
     dist2 = (coords[:, 0] - x_target)**2 + (coords[:, 1] - y_target)**2
     dof_p_ref = np.array([np.argmin(dist2)], dtype=np.int32)
     bcp_ref = dirichletbc(PETSc.ScalarType(0), dof_p_ref, Q)
@@ -110,7 +110,7 @@ for step in range(max_iterations):
     bcup = [bcu, bcp_ref]
 
     def periodic_boundary(x):
-        return (x[0] == 0.0) | (x[0] == L)
+        return (x[0] == 0.0) | (x[0] == L_const)
 
     def periodic_relation(x):
         out_x = np.zeros_like(x)
@@ -225,11 +225,18 @@ for step in range(max_iterations):
 
     print(f"mesh rebuilt, {mesh.topology.index_map(mesh.topology.dim).size_local} cells left")
 
-    topology, cell_types, geometry = vtk_mesh(mesh)
-    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
-    plotter = pv.Plotter()
-    plotter.add_mesh(grid, show_edges =True)
-    plotter.view_xy()
+    # topology, cell_types, geometry = vtk_mesh(mesh)
+    # grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+    # plotter = pv.Plotter()
+    # plotter.add_mesh(grid, show_edges =True)
+    # plotter.view_xy()
+    # plotter.show()
+
+    # At the very end of your loop, after plotting
+    del V, Q, Z, u_sol, p_sol, u_full, p_full, bc_shear_velocity, bcu_obstacle
+    del mpc_V, mpc_p, stress, T
+    del u, p, v, q, sigma_trial, w
+
 
     # endregion
 
