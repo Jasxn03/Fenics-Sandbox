@@ -116,7 +116,7 @@ ct.name = "Cell tags"
 # this is the bit that writes mesh to file
 
 folder = "Biofilm Meshes"
-file_path = os.path.join(folder, "arc_biofilm_mesh.xdmf")
+file_path = os.path.join(folder, "uneven_biofilm_mesh.xdmf")
 
 with XDMFFile(mesh_comm, file_path, "w") as xdmf:
     xdmf.write_mesh(mesh)
