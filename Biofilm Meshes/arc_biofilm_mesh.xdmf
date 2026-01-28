@@ -3,11 +3,11 @@
 <Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
   <Domain>
     <Grid Name="mesh" GridType="Uniform">
-      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11920" NodesPerElement="9">
-        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/topology</DataItem>
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11944" NodesPerElement="9">
+        <DataItem Dimensions="11944 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/topology</DataItem>
       </Topology>
       <Geometry GeometryType="XY">
-        <DataItem Dimensions="48061 2" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/geometry</DataItem>
+        <DataItem Dimensions="48157 2" Format="HDF">arc_biofilm_mesh.h5:/Mesh/mesh/geometry</DataItem>
       </Geometry>
     </Grid>
     <Grid Name="Facet markers" GridType="Uniform">
@@ -21,11 +21,11 @@
     </Grid>
     <Grid Name="Cell tags" GridType="Uniform">
       <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
-      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11920" NodesPerElement="9">
-        <DataItem Dimensions="11920 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/topology</DataItem>
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11944" NodesPerElement="9">
+        <DataItem Dimensions="11944 9" NumberType="Int" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/topology</DataItem>
       </Topology>
       <Attribute Name="Cell tags" AttributeType="Scalar" Center="Cell">
-        <DataItem Dimensions="11920 1" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/Values</DataItem>
+        <DataItem Dimensions="11944 1" Format="HDF">arc_biofilm_mesh.h5:/MeshTags/Cell tags/Values</DataItem>
       </Attribute>
     </Grid>
   </Domain>
