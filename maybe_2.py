@@ -50,7 +50,7 @@ from dolfinx.mesh import create_submesh
 
 # endregion
 
-mesh_file = "Biofilm Meshes/arc_biofilm_mesh.xdmf"
+mesh_file = "Biofilm Meshes/uneven_biofilm_mesh.xdmf"
 output_folder = "steady_stokes_results"
 os.makedirs(output_folder, exist_ok=True)
 
@@ -358,11 +358,11 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
 
     for c in range(num_cells):
         vertices = cell_to_vertex.links(c)  # vertices of this cell
-        dofs = []
-        for v in vertices:
-            # For CG1 tensor, each vertex contributes dim*dim DOFs
-            dofs.extend([v * dim * dim + i for i in range(dim*dim)])
-        stress_mag_cell[c] = np.mean(stress_mag_dofs[dofs])
+        # dofs = []
+        # for v in vertices:
+        #     # For CG1 tensor, each vertex contributes dim*dim DOFs
+        #     dofs.extend([v * dim * dim + i for i in range(dim*dim)])
+        stress_mag_cell[c] = np.mean(stress_mag_dofs[vertices])
 
     # --- Wrap as DG0 Function for plotting ---
     Q0 = functionspace(mesh, ("DG", 0))

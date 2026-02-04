@@ -55,7 +55,7 @@ L_const = 50
 H_const = 20
 max_iterations = 5
 stress_threshold = 0.1
-with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/finger_biofilm_mesh.xdmf", "r") as xdmf:
+with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/uneven_biofilm_mesh.xdmf", "r") as xdmf:
     mesh = xdmf.read_mesh(name = "mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
 inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5 # need to write these three lines so it knows what markers are what

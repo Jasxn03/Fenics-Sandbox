@@ -10,23 +10,30 @@ theta = 1
 mu = 5
 sigma = 0.3
 X0 = 5
-T = 100
+Y0 = 5
+T = 10
 dt = 0.01
 N = int(T/dt)
 
 X = np.zeros(N)
+Y = np.zeros(N)
 X[0] = X0
+Y[0] = Y0
 
 np.random.seed(1)
 
 for t in range(1,N):
     Wt = np.random.normal(0,1)
     X[t] = X[t-1] + theta * (mu -X[t-1]) * dt + sigma * np.sqrt(dt) * Wt 
+    Y[t] = Y[t-1] + X[t-1] * dt
 
-plt.plot(np.linspace(0,T,N),X)
+plt.figure()
+plt.plot(np.linspace(0,T,N),X, label = "ou process")
+plt.plot(np.linspace(0,T,N),Y, label = "integrated ou process")
 plt.xlabel("t")
-plt.ylabel("X")
+#plt.ylabel("X")
 plt.title("OU process")
+plt.legend()
 plt.show()
 
 # i can compute stress on my biofilm so i can choose a single point and i have stress for shear velocity 1500 (i also have 0 stress for 0 velocity)
@@ -99,32 +106,32 @@ plt.show()
 
 # this bit is just testing using a pdf instead of a generated ou process. the pdf will be gaussian and have same mu and sigma as ou process.
 
-mu_pdf = 5.0      # mean velocity
-sigma_pdf = 0.3   # std of velocity
-N_pdf = 1000
+# mu_pdf = 5.0      # mean velocity
+# sigma_pdf = 0.3   # std of velocity
+# N_pdf = 1000
 
-np.random.seed(1)
-velocity_samples = np.random.normal(mu, sigma, size=N)
+# np.random.seed(1)
+# velocity_samples = np.random.normal(mu, sigma, size=N)
 
-plt.plot(velocity_samples)
-plt.xlabel("Time step")
-plt.ylabel("Velocity (m/s)")
-plt.title("Random velocity time series sampled from Gaussian")
-plt.show()
+# plt.plot(velocity_samples)
+# plt.xlabel("Time step")
+# plt.ylabel("Velocity (m/s)")
+# plt.title("Random velocity time series sampled from Gaussian")
+# plt.show()
 
-plt.figure(figsize=(10,4))
-t_vals = np.linspace(0, T, N)
+# plt.figure(figsize=(10,4))
+# t_vals = np.linspace(0, T, N)
 
-plt.plot(t_vals, X, label="OU process (correlated)")
-plt.plot(t_vals, velocity_samples, label="Gaussian samples (uncorrelated)", alpha=0.7)
-plt.xlabel("t")
-plt.ylabel("X")
-plt.title("Comparison: OU process vs Gaussian sampling")
-plt.legend()
-plt.show()
+# plt.plot(t_vals, X, label="OU process (correlated)")
+# plt.plot(t_vals, velocity_samples, label="Gaussian samples (uncorrelated)", alpha=0.7)
+# plt.xlabel("t")
+# plt.ylabel("X")
+# plt.title("Comparison: OU process vs Gaussian sampling")
+# plt.legend()
+# plt.show()
 
-print("OU mean:", np.mean(X))
-print("OU std :", np.std(X))
+# print("OU mean:", np.mean(X))
+# print("OU std :", np.std(X))
 
-print("Gaussian mean:", np.mean(velocity_samples))
-print("Gaussian std :", np.std(velocity_samples))
+# print("Gaussian mean:", np.mean(velocity_samples))
+# print("Gaussian std :", np.std(velocity_samples))

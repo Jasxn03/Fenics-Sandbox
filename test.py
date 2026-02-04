@@ -333,6 +333,17 @@ os.makedirs(folder, exist_ok=True)
 plotter.screenshot(f"{folder}/uneven_stress_field.png")
 plotter.close()
 
+# --- Boundary stress plot with black line overlay ---
+plt.figure(figsize=(8,4))
+plt.plot(s, stress_mag_boundary, 'o', markersize=3, label="Stress magnitude")
+plt.plot(s, stress_mag_boundary, 'k-', linewidth=1.5, label="Boundary")  # black line along boundary
+plt.xlabel("Arc length along boundary")
+plt.ylabel("Stress magnitude")
+plt.title("Boundary stress with boundary line")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
 # endregion
 
 print("end")

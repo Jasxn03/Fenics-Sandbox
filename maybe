@@ -1,5 +1,3 @@
-
-# region Imports
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +15,7 @@ from dolfinx.fem import (
     locate_dofs_topological,
     Expression,
 )
-from dolfinx.geometry import bb_tree, compute_collisions_points, compute_colliding_cells, BoundingBoxTree
+from dolfinx.geometry import bb_tree, compute_collisions_points, compute_colliding_cells
 from dolfinx.io import gmsh as gmshio, XDMFFile
 from ufl import (
     FacetNormal,
@@ -48,131 +46,39 @@ from dolfinx import plot
 import typing
 from dolfinx.mesh import create_submesh
 
-# endregion
 
-mesh_file = "Biofilm Meshes/arc_biofilm_mesh.xdmf"
+mesh_file = "Biofilm Meshes/uneven_biofilm_mesh.xdmf"
 output_folder = "steady_stokes_results"
 os.makedirs(output_folder, exist_ok=True)
+
+L_const, H_const = 50, 20
+max_iterations = 5
+stress_threshold = 0.1
+inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
 
 with XDMFFile(MPI.COMM_WORLD, mesh_file, "r") as xdmf:
     mesh = xdmf.read_mesh(name="mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
-    ct = xdmf.read_meshtags(mesh, name ="Cell tags")
 
-L_const, H_const = 50, 20
-u_prev = None
-p_prev = None
-mu_field_prev = None
-ct_current = ct
-ft_current = ft
-max_iterations = 5
-stress_threshold = 0.01
-inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
+def remesh_iteration(mesh, ft):
+
+    fdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(fdim, mesh.topology.dim)
 
 
-# region Functions 
-from collections import deque
-
-def remove_floating_biofilm(mesh, ct, mu_field, biofilm_marker=6):
-    dim = mesh.topology.dim
-    mesh.topology.create_connectivity(dim, 0)
-    mesh.topology.create_connectivity(0, dim)
-
-    biofilm_cells = set(ct.find(biofilm_marker))
-
-    unvisited = set(biofilm_cells)
-    clusters = []
-    cell_to_vertex = mesh.topology.connectivity(dim, 0)
-    vertex_to_cell = mesh.topology.connectivity(0, dim)
-
-    while unvisited:
-        start = unvisited.pop()
-        cluster = set([start])
-        queue = deque([start])
-        while queue:
-            c = queue.popleft()
-            vertices = cell_to_vertex.links(c)
-            for v in vertices:
-                neighbors = vertex_to_cell.links(v)
-                for n in neighbors:
-                    if n in unvisited:
-                        unvisited.remove(n)
-                        cluster.add(n)
-                        queue.append(n)
-        clusters.append(cluster)
-
-    # Keep the largest cluster
-    # clusters = sorted(clusters, key=len, reverse=True)
-    # main_cluster = clusters[0]
-
-    # # Convert all smaller clusters to fluid
-    # ct_values = ct.values.copy()
-    # for cluster in clusters[1:]:
-    #     for c in cluster:
-    #         ct_values[c] = 1          # convert to fluid
-    #         mu_field.x.array[c] = 1e-3
-
-    MIN_CLUSTER_SIZE = 8  # tune this
-    ct_values = ct.values.copy()
-    for cluster in clusters:
-        if len(cluster) < MIN_CLUSTER_SIZE:
-            for c in cluster:
-                ct_values[c] = 1
-                mu_field.x.array[c] = 1e-3
-
-
-    ct_new = dolfinx.mesh.meshtags(mesh, dim, ct.indices, ct_values)
-    return ct_new, mu_field
-
-def plot_biofilm_fluid_pyvista(mesh, ct, step):
-    if mesh.comm.rank != 0:
-        return
-
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    cell_indices = np.arange(num_cells, dtype=np.int32)
-    topology, cell_types, geometry = dolfinx.plot.vtk_mesh(mesh, mesh.topology.dim, cell_indices)
-    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
-
-    biofilm_cells = ct.find(6)  
-    fluid_cells = ct.find(1)    
-    cell_data = np.zeros(num_cells, dtype=np.int32)
-    cell_data[fluid_cells] = 1
-    cell_data[biofilm_cells] = 6
-    grid.cell_data["BiofilmFluid"] = cell_data
-
-    # cmap = {1:"blue", 6:"red"}
-
-    # plotter = pv.Plotter()
-    # # values mapped by our custom scalars array
-    # plotter.add_mesh(grid, scalars="BiofilmFluid", 
-    #                  categories=True, clim=[1,6],
-    #                  cmap=["blue","red"], show_edges=True)
-    # plotter.add_title(f"Iteration {step+1}: Fluid (blue) vs Biofilm (red)")
-    # plotter.view_xy()
-    # plotter.show()
-
-    folder = "erosion"
-    filename = os.path.join(f"{folder}/biofilm_fluid_iteration_{step+1}.vtu")
-    grid.save(filename)
-    print(f"Saved iteration {step+1} to {filename} (open in ParaView for high-quality visualization)")
-
-
-def build_bcs_mpcs(mesh, ft):
-    biofilm_marker = 6
-    obstacle_marker = 5
-    wall_marker = 4
-    dim = mesh.topology.dim
-    fdim = dim - 1
-
-    v_cg2 = element("Lagrange", mesh.basix_cell(), 2, shape=(dim,))
+    v_cg2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
     s_cg1 = element("Lagrange", mesh.basix_cell(), 1)
     V = functionspace(mesh, v_cg2)
     Q = functionspace(mesh, s_cg1)
     Z = MixedFunctionSpace(V,Q)
+    x = SpatialCoordinate(mesh)
+    n = FacetNormal(mesh)
+    mu = Constant(mesh, PETSc.ScalarType(0.001))  
+    rho = Constant(mesh, PETSc.ScalarType(1))
+    f = Constant(mesh, (0.0,0.0))
 
-    # bcs
     def shear_velocity_f(x):
-        values = np.zeros((dim, x.shape[1]), dtype=PETSc.ScalarType)
+        values = np.zeros((2, x.shape[1]), dtype=PETSc.ScalarType)
         values[0, :] = 1500
         values[1, :] = 0.0
         return values
@@ -183,25 +89,22 @@ def build_bcs_mpcs(mesh, ft):
         u_wall, locate_dofs_topological(V, fdim, ft.find(wall_marker))
     )
 
-    u_nonslip = np.zeros(dim, dtype=PETSc.ScalarType)
+    u_nonslip = np.array((0,)* mesh.geometry.dim, dtype=PETSc.ScalarType)
     bcu_obstacle = dirichletbc(
         u_nonslip, locate_dofs_topological(V, fdim, ft.find(obstacle_marker)), V
     )
 
     bcu = [bc_shear_velocity, bcu_obstacle]
 
-    # pressure bc
     coords = mesh.geometry.x
-    x_target = 50 / 2
-    y_target = 0
+    x_target = L_const / 2
+    y_target = H_const
     dist2 = (coords[:, 0] - x_target)**2 + (coords[:, 1] - y_target)**2
     dof_p_ref = np.array([np.argmin(dist2)], dtype=np.int32)
     bcp_ref = dirichletbc(PETSc.ScalarType(0), dof_p_ref, Q)
 
-    # MPCs for periodicity
     def periodic_boundary(x):
-        return (x[0] == 0.0) | (x[0] == 50)
-
+        return (x[0] == 0.0) | (x[0] == L_const)
     def periodic_relation(x):
         out_x = np.zeros_like(x)
         out_x[0] = 0
@@ -216,44 +119,13 @@ def build_bcs_mpcs(mesh, ft):
     mpc_p.create_periodic_constraint_geometrical(Q, periodic_boundary, periodic_relation, [bcp_ref])
     mpc_p.finalize()
 
-    return V, Q, Z, bcu, bcp_ref, [mpc_V, mpc_p], v_cg2, s_cg1
-
-
-
-def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None):
-    biofilm_marker = 6
-    obstacle_marker = 5
-    wall_marker = 4
-
-    fdim = mesh.topology.dim - 1
-    mesh.topology.create_connectivity(fdim, mesh.topology.dim)
-
-    V, Q, Z, bcu, bcp_ref, mpcs, v_cg2, s_cg1 = build_bcs_mpcs(mesh, ft)
-    mpc_V, mpc_p = mpcs
-
-    Q0 = functionspace(mesh, ("DG", 0))
-    mu_field = Function(Q0)
-    mu = Constant(mesh, PETSc.ScalarType(0.001))  
-    mu_bf = Constant(mesh, PETSc.ScalarType(1000))
-    mu_field.x.array[:] = 1e-3
-    biofilm_cells = ct.find(6)  
-    mu_field.x.array[biofilm_cells] = 1000 
-    rho = Constant(mesh, PETSc.ScalarType(1))
-    f = Constant(mesh, (0.0,0.0))
+    mpc = [mpc_V, mpc_p]
 
     (u, p) = TrialFunctions(Z)
     (v, q) = TestFunctions(Z)
 
-    # a = [[mu * inner(grad(u), grad(v)) * dx, -inner(p, div(v)) * dx],
-    #     [ inner(div(u), q) * dx, None]]
-    
-    a = [[
-            2 * inner(mu_field * sym(grad(u)), sym(grad(v))) * dx,
-            -inner(p, div(v)) * dx
-        ],[
-            inner(div(u), q) * dx,
-            None
-        ]]
+    a = [[mu * inner(grad(u), grad(v)) * dx, -inner(p, div(v)) * dx],
+        [ inner(div(u), q) * dx, None]]
 
     L = [inner(f, v) * dx,
         Constant(mesh, PETSc.ScalarType(0)) * q * dx]
@@ -261,31 +133,21 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
     problem = LinearProblem(
         a, 
         L,
-        bcs = bcu + [bcp_ref],
+        bcs = [bc_shear_velocity, bcu_obstacle, bcp_ref],
         mpc = [mpc_V, mpc_p],
         petsc_options={"ksp_type": "gmres", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"}
     )
     u_sol, p_sol = problem.solve()
-
-    if u_prev is not None and p_prev is not None:
-        u_sol.interpolate(u_prev)
-        p_sol.interpolate(p_prev)
-        u_sol.x.scatter_forward()
-        p_sol.x.scatter_forward()
-        mpc_V.backsubstitution(u_sol)
-        mpc_p.backsubstitution(p_sol)
-    
     u_sol.x.scatter_forward()
     p_sol.x.scatter_forward()
     mpc_V.backsubstitution(u_sol)
     mpc_p.backsubstitution(p_sol)
-    
     print("Max velocity:", np.max(u_sol.x.array))
-    
+
     dim = mesh.geometry.dim
     I = Identity(dim)
     strain_rate = sym(grad(u_sol))
-    sigma_expr = -p_sol*I + 2.0*mu_field*strain_rate
+    sigma_expr = -p_sol*I + 2.0*mu*strain_rate
 
     tensor_el = element("Lagrange", mesh.basix_cell(), 1, shape=(dim, dim))
     T = functionspace(mesh, tensor_el)
@@ -297,7 +159,7 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
     stress_problem = dolfinx.fem.petsc.LinearProblem(
         a_proj,
         L_proj,
-        bcs=[], 
+        bcs=[],  # no Dirichlet BCs for stress
         petsc_options={"ksp_type": "gmres", "pc_type": "lu"},
         petsc_options_prefix="solver_"
     )
@@ -305,110 +167,57 @@ def remesh_iteration(mesh, ft, ct, u_prev = None, p_prev = None, mu_prev = None)
     stress_vals = stress.x.array.reshape((-1, dim, dim))
     stress_mag = np.linalg.norm(stress_vals, axis=(1,2))
 
-    mesh.topology.create_connectivity(dim, dim-1)
-    mesh.topology.create_connectivity(dim-1, dim)
-
-    fluid_facets = ct.find(1)
-    biofilm_facets = ct.find(6)
-
-    facet_to_cell = mesh.topology.connectivity(dim-1, dim)
-    cell_to_facet = mesh.topology.connectivity(dim, dim-1)
-
-    biofilm_cells_set = set()
-    for f in biofilm_facets:
-        biofilm_cells_set.update(facet_to_cell.links(f))
-
-    high_stress_fluid_cells = set()
+    mesh.topology.create_connectivity(mesh.topology.dim-1, mesh.topology.dim)
     boundary_facets = ft.find(obstacle_marker)
+    facet_to_cell = mesh.topology.connectivity(mesh.topology.dim-1, mesh.topology.dim)
+
+    failed_cells = set()
     for f in boundary_facets:
-        dofs = locate_dofs_topological(T, dim-1, np.array([f], dtype = np.int32))
-        if np.mean(stress_mag[dofs]) > stress_threshold:
-            owners = facet_to_cell.links(f)
-            high_stress_fluid_cells.update(owners)
+        # dofs = locate_dofs_topological(T, mesh.topology.dim-1, np.array([f], dtype=np.int32))
+        # if np.mean(stress_mag[dofs]) > stress_threshold:
+        #     owners = facet_to_cell.links(f)
+        #     failed_cells.update(owners)
+        cell_dofs = mesh.topology.connectivity(mesh.topology.dim-1, mesh.topology.dim).links(f)
+        cell_stress = stress_mag[cell_dofs]
+        if np.mean(cell_stress) > stress_threshold:
+            failed_cells.update(cell_dofs)
 
-    neighboring_biofilm_cells = set()
-    for c in high_stress_fluid_cells:
-        facets = cell_to_facet.links(c)       
-        for f in facets:
-            neighbor_cells = facet_to_cell.links(f) 
-            for n in neighbor_cells:
-                if n in biofilm_cells_set:
-                    neighboring_biofilm_cells.add(n)
+
+    mesh.topology.create_connectivity(mesh.topology.dim, mesh.topology.dim)
     
-    additional_neighbors = set()
-    for c in neighboring_biofilm_cells:
-        facets = cell_to_facet.links(c)
-        for f in facets:
-            neighbor_cells = facet_to_cell.links(f)
-            for n in neighbor_cells:
-                if n in biofilm_cells_set:
-                    additional_neighbors.add(n)
+    neighbor_connectivity = mesh.topology.connectivity(mesh.topology.dim, mesh.topology.dim)
+    all_failed = set(failed_cells)
+    for c in failed_cells:
+        neighbors = neighbor_connectivity.links(c)
+        all_failed.update(neighbors)
+    failed_cells = list(all_failed)
+
+    print(f"Number of failed cells: {len(failed_cells)}")
+    if len(failed_cells) == 0:
+        return None  
 
 
-    neighboring_biofilm_cells.update(additional_neighbors)
+    all_cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
+    keep_cells = np.setdiff1d(all_cells, failed_cells)
+    submesh, entity_map, vertex_map, node_map = create_submesh(mesh, mesh.topology.dim, keep_cells)
 
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    all_indices = np.arange(num_cells, dtype=np.int32)
-    ct_old_values = ct.values.copy() #this line is new
-    ct_values = ct.values.copy()
-    for c in neighboring_biofilm_cells:
-        ct_values[c] = 1
-        mu_field.x.array[c] = 1e-3
-    ct = dolfinx.mesh.meshtags(mesh, mesh.topology.dim, ct.indices, ct_values)
-    # ct, mu_field = remove_floating_biofilm(mesh, ct, mu_field, biofilm_marker=6)
-
-    for c in neighboring_biofilm_cells:
-        mu_field.x.array[c] = 1e-3
-
-    dim = mesh.topology.dim
-    fdim = dim - 1
-    mesh.topology.create_connectivity(dim-1, dim)
-    mesh.topology.create_connectivity(dim, dim-1)
-
-    facet_to_cell = mesh.topology.connectivity(dim-1, dim)
-    cell_to_facet = mesh.topology.connectivity(dim, dim-1)
-
-    new_ft_values = np.zeros(mesh.topology.index_map(fdim).size_local, dtype=np.int32)
-
-    for f in range(mesh.topology.index_map(fdim).size_local):
-        linked_cells = facet_to_cell.links(f)
-        if len(linked_cells) == 1:
-            new_ft_values[f] = obstacle_marker
-        elif len(linked_cells) == 2:
-            c1, c2 = linked_cells
-            if (ct.values[c1] == 1 and ct.values[c2] == 6) or (ct.values[c2] == 1 and ct.values[c1] == 6):
-                new_ft_values[f] = obstacle_marker
-
-    ft = dolfinx.mesh.meshtags(mesh, fdim, np.arange(len(new_ft_values), dtype=np.int32), new_ft_values)
+    return submesh
 
 
-    print("High-stress fluid cells:", len(high_stress_fluid_cells))
-    print("Biofilm cells to remove:", len(neighboring_biofilm_cells))
-    print("Biofilm cells converted to fluid:", len(neighboring_biofilm_cells))
-    num_changed = np.sum(ct_old_values != ct_values) #changed ct.indices to ct_old_values
-    print(f"Number of biofilm cells actually converted to fluid this iteration: {num_changed}")
-
-    if len(neighboring_biofilm_cells) == 0:
-        return None, u_sol, p_sol, mu_field, ft , ct 
-
-    return mesh, u_sol, p_sol, mu_field, ft, ct, stress_mag
-
-#endregion
-
-# Iteration
 for step in range(max_iterations):
     print(f"\n=== Step {step+1} ===")
-    ct_current, mu_field_prev = remove_floating_biofilm(mesh, ct_current, mu_field_prev, biofilm_marker=6)
-    mesh, u_prev, p_prev, mu_field_prev, ft_current, ct_current, stress_mag = remesh_iteration(
-        mesh, ft_current, ct_current, u_prev, p_prev, mu_prev = mu_field_prev
-    )
-    plot_biofilm_fluid_pyvista(mesh, ct_current, step)
-
-    if len(ct_current.find(6)) == 0:
-        print("All biofilm removed, stopping simulation.")
+    new_mesh = remesh_iteration(mesh, ft)
+    if new_mesh is None:
+        print("No failed cells, stopping simulation.")
         break
+    mesh = new_mesh
 
-
+    topology, cell_types, geometry = vtk_mesh(mesh)
+    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+    plotter = pv.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    plotter.view_xy()
+    plotter.show()
 
 
 
