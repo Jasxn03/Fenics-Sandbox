@@ -51,6 +51,8 @@ from dolfinx.mesh import meshtags
 
 # endregion
 
+#region original solver
+
 L = 50
 H = 20
 with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/uneven_biofilm_mesh.xdmf", "r") as xdmf:
@@ -61,8 +63,6 @@ with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/uneven_biofilm_mesh.xdmf", "r") as
 inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5 # need to write these three lines so it knows what markers are what
 fdim = mesh.topology.dim - 1 
 mesh.topology.create_connectivity(fdim, mesh.topology.dim)
-
-# region Boundary Conditions 
 
 Q0 = functionspace(mesh, ("DG", 0))
 mu_field = Function(Q0)
@@ -134,9 +134,6 @@ mpc_p.create_periodic_constraint_geometrical(Q, periodic_boundary, periodic_rela
 mpc_p.finalize()
 mpc = [mpc_V, mpc_p]
 
-# endregion
-
-# region Solver
 (u, p) = TrialFunctions(Z)
 (v, q) = TestFunctions(Z)
 
@@ -268,6 +265,8 @@ x = stress_coords[:, 0] #these three lines are new
 y = stress_coords[:, 1]
 s = stress_magnitude
 
+# endregion
+
 #-----------------------------------------------------------------------------
 # i am trying to figure out what is wrong
 
@@ -290,7 +289,7 @@ biofilm_cells = ct.find(6)
 fluid_cells = ct.find(1)
 neighbouring_biofilm_cells = set()
 
-# Compute average stress magnitude per cell
+# compute average stress magnitude per cell
 stress_mag_cell = np.zeros(len(ct.values))
 for c in range(len(ct.values)):
     dofs = cell_to_dof(c)
@@ -327,24 +326,19 @@ print(f"Number of fluid cells with stress > {threshold}: {len(high_stress_fluid)
 print(f"Number of biofilm cells next to high-stress fluid cells: {len(neighbouring_biofilm_cells)}")
 print(f"All biofilm cells that are high-stress: {len(all_high_stress_biofilm_cells)}")
 
-# --- Prepare cell masks ---
 num_cells = len(ct.values)
-cell_colors = np.full(num_cells, -1, dtype=np.int32)  # -1 = default (transparent)
+cell_colors = np.full(num_cells, -1, dtype=np.int32)  
 
-# high-stress fluid = 0 (black)
 for c in high_stress_fluid:
     cell_colors[c] = 0
 
-# neighboring biofilm cells = 1 (white)
 for c in all_high_stress_biofilm_cells:
     cell_colors[c] = 1
 
-# --- Attach cell data to PyVista grid ---
 topology_s, cell_types_s, geometry_s = vtk_mesh(T)
 grid_mask = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
 grid_mask.cell_data["mask"] = cell_colors
 
-# --- Build PyVista grid from velocity solution ---
 topology, cell_types, geometry = vtk_mesh(V)
 grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
 u_2d = u_sol.x.array.reshape((-1, mesh.geometry.dim))
@@ -353,11 +347,11 @@ u_3d[:, :2] = u_2d
 grid_u["u"] = u_3d
 grid_u["|u|"] = np.linalg.norm(u_2d, axis=1)
 
-# --- Cell tags ---
+
 grid_u.cell_data['cell_tags'] = ct.values  # mesh after removing high-stress biofilm
 biofilm_tag = 6
 
-# Extract fluid and remaining biofilm for plotting
+
 fluid_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] != biofilm_tag)
 biofilm_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] == biofilm_tag)
 
@@ -366,33 +360,20 @@ if len(all_high_stress_biofilm_cells) > 0:
     high_stress_grid = grid_u.extract_cells(high_stress_cell_ids)
 else:
     high_stress_grid = None
-# --- Plot ---
+
 plotter = pyvista.Plotter()
 
-# Fluid: colored by velocity magnitude
-plotter.add_mesh(
-    fluid_grid,
-    scalars="|u|",
-    cmap="viridis",
-    show_edges=False
-)
 
-# Remaining biofilm: solid white
-plotter.add_mesh(
-    biofilm_grid,
-    color="white",
-    show_edges=True
-)
+plotter.add_mesh(fluid_grid,scalars="|u|",cmap="viridis",show_edges=False)
 
-# High-stress biofilm (red overlay)
-if high_stress_grid is not None:
-    plotter.add_mesh(
-        high_stress_grid,
+plotter.add_mesh(biofilm_grid, color="white",show_edges=True)
+
+if high_stress_grid is not None:plotter.add_mesh(high_stress_grid,
         color="red",
         show_edges=True
     )
 
-# Optional: velocity glyphs only in fluid
+
 glyphs = fluid_grid.glyph(orient="u", scale=False, factor=0.05)
 plotter.add_mesh(glyphs, color="black")
 
