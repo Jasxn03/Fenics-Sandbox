@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11148" NodesPerElement="9">
+        <DataItem Dimensions="11148 9" NumberType="Int" Format="HDF">updated_mesh_new.h5:/Mesh/mesh/topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XY">
+        <DataItem Dimensions="44861 2" Format="HDF">updated_mesh_new.h5:/Mesh/mesh/geometry</DataItem>
+      </Geometry>
+    </Grid>
+    <Grid Name="mesh_tags" GridType="Uniform">
+      <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="11148" NodesPerElement="9">
+        <DataItem Dimensions="11148 9" NumberType="Int" Format="HDF">updated_mesh_new.h5:/MeshTags/mesh_tags/topology</DataItem>
+      </Topology>
+      <Attribute Name="mesh_tags" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="11148 1" Format="HDF">updated_mesh_new.h5:/MeshTags/mesh_tags/Values</DataItem>
+      </Attribute>
+    </Grid>
+    <Grid Name="mesh_tags" GridType="Uniform">
+      <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
+      <Topology TopologyType="Edge_3" NumberOfElements="444" NodesPerElement="3">
+        <DataItem Dimensions="444 3" NumberType="Int" Format="HDF">updated_mesh_new.h5:/MeshTags/mesh_tags/topology</DataItem>
+      </Topology>
+      <Attribute Name="mesh_tags" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="444 1" Format="HDF">updated_mesh_new.h5:/MeshTags/mesh_tags/Values</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

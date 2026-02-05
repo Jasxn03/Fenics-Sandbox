@@ -625,8 +625,16 @@ plotter.view_xy()
 plotter.show()
 
 
-# not sure if this stress picture is correct, plot stress before update mesh (just copy and paste) and check difference
+fname = "eroded_mesh"
 
+for ext in [".xdmf", ".h5"]:
+    if os.path.exists(fname + ext):
+        os.remove(fname + ext)
+
+with XDMFFile(MPI.COMM_WORLD, fname + ".xdmf", "w") as xdmf:
+    xdmf.write_mesh(mesh)
+    #xdmf.write_meshtags(new_ct, mesh.geometry)
+    xdmf.write_meshtags(new_ft, mesh.geometry)
 
 #-----------------------------------------------------------------------------
 
