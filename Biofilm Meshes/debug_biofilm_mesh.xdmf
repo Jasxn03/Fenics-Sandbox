@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="12320" NodesPerElement="9">
+        <DataItem Dimensions="12320 9" NumberType="Int" Format="HDF">debug_biofilm_mesh.h5:/Mesh/mesh/topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XY">
+        <DataItem Dimensions="49597 2" Format="HDF">debug_biofilm_mesh.h5:/Mesh/mesh/geometry</DataItem>
+      </Geometry>
+    </Grid>
+    <Grid Name="Facet markers" GridType="Uniform">
+      <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
+      <Topology TopologyType="Edge_3" NumberOfElements="524" NodesPerElement="3">
+        <DataItem Dimensions="524 3" NumberType="Int" Format="HDF">debug_biofilm_mesh.h5:/MeshTags/Facet markers/topology</DataItem>
+      </Topology>
+      <Attribute Name="Facet markers" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="524 1" Format="HDF">debug_biofilm_mesh.h5:/MeshTags/Facet markers/Values</DataItem>
+      </Attribute>
+    </Grid>
+    <Grid Name="Cell tags" GridType="Uniform">
+      <xi:include xpointer="xpointer(/Xdmf/Domain/Grid/Geometry)" />
+      <Topology TopologyType="Quadrilateral_9" NumberOfElements="12320" NodesPerElement="9">
+        <DataItem Dimensions="12320 9" NumberType="Int" Format="HDF">debug_biofilm_mesh.h5:/MeshTags/Cell tags/topology</DataItem>
+      </Topology>
+      <Attribute Name="Cell tags" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="12320 1" Format="HDF">debug_biofilm_mesh.h5:/MeshTags/Cell tags/Values</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

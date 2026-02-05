@@ -1,5 +1,3 @@
-#region Import
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -191,44 +189,74 @@ print("simulation finished")
 
 # region Plotting
 
-topology, cell_types, geometry = vtk_mesh(V)
-grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-u_2d = u_sol.x.array.reshape((-1, mesh.geometry.dim))
-u_3d = np.zeros((u_2d.shape[0], 3), dtype=u_2d.dtype)
-u_3d[:, :2] = u_2d
-grid_u["u"] = u_3d
-grid_u["|u|"] = np.linalg.norm(u_2d, axis=1)
+# u plotting
+# topology, cell_types, geometry = vtk_mesh(V)
+# grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
+# u_2d = u_sol.x.array.reshape((-1, mesh.geometry.dim))
+# u_3d = np.zeros((u_2d.shape[0], 3), dtype=u_2d.dtype)
+# u_3d[:, :2] = u_2d
+# grid_u["u"] = u_3d
+# grid_u["|u|"] = np.linalg.norm(u_2d, axis=1)
 
-cell_tags = ct.values
-grid_u.cell_data['cell_tags'] = cell_tags
-biofilm_tag = 6
+# plotter = pyvista.Plotter(off_screen=True)
+# plotter.add_mesh(grid_u,scalars="|u|",cmap="viridis",show_edges=False)
 
-fluid_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] != biofilm_tag)
-biofilm_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] == biofilm_tag)
-plotter = pyvista.Plotter()
+# glyphs = grid_u.glyph(orient="u",scale=False,factor=0.05)
+# plotter.add_mesh(glyphs, color="black")
+# plotter.add_title("Velocity field")
+# plotter.view_xy()
+# folder = "steady_stokes_results"
+# os.makedirs(folder, exist_ok=True)
+# plotter.screenshot(f"{folder}/uneven_velocity_field.png")
+# plotter.close()
 
-# Fluid: colored by velocity magnitude
-plotter.add_mesh(
-    fluid_grid,
-    scalars="|u|",
-    cmap="viridis",
-    show_edges=False
-)
 
-# Biofilm: solid white
-plotter.add_mesh(
-    biofilm_grid,
-    color="white",
-    show_edges=True
-)
+# cell_tags = ct.values
+# grid_u.cell_data['cell_tags'] = cell_tags
+# biofilm_tag = 6
 
-# Optional: velocity glyphs only in fluid
-glyphs = fluid_grid.glyph(orient="u", scale=False, factor=0.05)
-plotter.add_mesh(glyphs, color="black")
+# fluid_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] != biofilm_tag)
+# biofilm_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] == biofilm_tag)
+# plotter = pyvista.Plotter(off_screen=True)
 
-plotter.add_title("Velocity field (biofilm masked) before erosion")
-plotter.view_xy()
-plotter.show()
+# # Fluid: colored by velocity magnitude
+# plotter.add_mesh(
+#     fluid_grid,
+#     scalars="|u|",
+#     cmap="viridis",
+#     show_edges=False
+# )
+
+# # Biofilm: solid white
+# plotter.add_mesh(
+#     biofilm_grid,
+#     color="white",
+#     show_edges=True
+# )
+
+# # Optional: velocity glyphs only in fluid
+# glyphs = fluid_grid.glyph(orient="u", scale=False, factor=0.05)
+# plotter.add_mesh(glyphs, color="black")
+
+# plotter.add_title("Velocity field (biofilm masked)")
+# plotter.view_xy()
+# plotter.screenshot(f"{folder}/uneven_velocity_field_masked.png")
+# plotter.close()
+
+
+# # p plotting
+# topology_p, cell_types_p, geometry_p = vtk_mesh(Q)
+# grid_p = pyvista.UnstructuredGrid(topology_p, cell_types_p, geometry_p)
+# grid_p["p"] = p_sol.x.array
+
+# plotter = pyvista.Plotter(off_screen=True)
+# plotter.add_mesh(grid_p,scalars="p",cmap="coolwarm",show_edges=False)
+# plotter.add_title("Pressure field")
+# plotter.view_xy()
+# folder = "steady_stokes_results"
+# os.makedirs(folder, exist_ok=True)
+# plotter.screenshot(f"{folder}/uneven_pressure_field.png")
+# plotter.close()
 
 print("plotting finished")
 
@@ -270,6 +298,8 @@ s = stress_magnitude
 
 #-----------------------------------------------------------------------------
 # i am trying to figure out what is wrong
+
+
 
 
 # Get cell-to-dof connectivity for stress field
@@ -344,6 +374,15 @@ topology_s, cell_types_s, geometry_s = vtk_mesh(T)
 grid_mask = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
 grid_mask.cell_data["mask"] = cell_colors
 
+# --- Plot ---
+plotter = pyvista.Plotter(off_screen=True)
+
+
+
+
+
+
+
 # --- Build PyVista grid from velocity solution ---
 topology, cell_types, geometry = vtk_mesh(V)
 grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -396,7 +435,7 @@ if high_stress_grid is not None:
 glyphs = fluid_grid.glyph(orient="u", scale=False, factor=0.05)
 plotter.add_mesh(glyphs, color="black")
 
-plotter.add_title("Velocity field (high-stress biofilm in red) 1 ")
+plotter.add_title("Velocity field (high-stress biofilm in red)")
 plotter.view_xy()
 plotter.show()
 
@@ -463,128 +502,6 @@ ft_values[mask] = fluid_facet_tag
 # Create new MeshTags
 new_ft = meshtags(mesh, mesh.topology.dim-1, ft.indices, ft_values)
 
-# --- Step 4: Recompute mesh connectivity ---
-mesh.topology.create_connectivity(fdim, mesh.topology.dim)
-mesh.topology.create_connectivity(mesh.topology.dim, fdim)
-
-problem = LinearProblem(
-    a,
-    L,
-    bcs=[bc_shear_velocity, bcu_obstacle, bcp_ref],
-    mpc=[mpc_V, mpc_p],
-    petsc_options={"ksp_type": "gmres", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"}
-)
-u_sol, p_sol = problem.solve()
-
-u_sol.x.scatter_forward()
-p_sol.x.scatter_forward()
-
-u_full = Function(V)
-mpc_V.backsubstitution(u_sol)  
-
-# Pressure
-p_full = Function(Q)
-mpc_p.backsubstitution(p_sol)
-
-print("Max velocity:", np.max(u_sol.x.array))
-
-Vdim = mesh.geometry.dim
-u_vals = u_sol.x.array.reshape((-1, Vdim))
-biofilm_dofs = locate_dofs_topological(V, mesh.topology.dim, biofilm_cells)
-
-print("Max |u| in biofilm:",
-      np.linalg.norm(u_vals[biofilm_dofs], axis=1).max())
-
-# u plotting
-topology, cell_types, geometry = vtk_mesh(V)
-grid_u = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-u_2d = u_sol.x.array.reshape((-1, mesh.geometry.dim))
-u_3d = np.zeros((u_2d.shape[0], 3), dtype=u_2d.dtype)
-u_3d[:, :2] = u_2d
-grid_u["u"] = u_3d
-grid_u["|u|"] = np.linalg.norm(u_2d, axis=1)
-
-# Assign cell tags
-grid_u.cell_data['cell_tags'] = new_ct.values
-biofilm_tag = 6
-
-# Extract new fluid and biofilm grids
-fluid_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] != biofilm_tag)
-biofilm_grid = grid_u.extract_cells(grid_u.cell_data["cell_tags"] == biofilm_tag)
-
-plotter = pyvista.Plotter()
-
-# Fluid: colored by velocity magnitude
-plotter.add_mesh(
-    fluid_grid,
-    scalars="|u|",
-    cmap="viridis",
-    show_edges=False
-)
-
-# Remaining biofilm: solid white
-plotter.add_mesh(
-    biofilm_grid,
-    color="white",
-    show_edges=True
-)
-
-# Optional: velocity glyphs only in fluid
-glyphs = fluid_grid.glyph(orient="u", scale=False, factor=0.05)
-plotter.add_mesh(glyphs, color="black")
-
-plotter.add_title("Velocity field (updated biofilm → fluid)")
-plotter.view_xy()
-plotter.show()
-
-# this looks correct now. 
-# next step is to plot stress in this new field to see if my boundaries have actually changed
-# or maybe can export mesh to gmsh and can see via tools/visibility
-
-dim = mesh.geometry.dim
-I = Identity(dim)
-strain_rate = sym(grad(u_sol))
-sigma_expr = -p_sol*I + 2.0*mu_field*strain_rate
-
-tensor_el = element("Lagrange", mesh.basix_cell(), 1, shape=(dim, dim))
-T = functionspace(mesh, tensor_el)
-stress = Function(T)
-
-sigma_trial = TrialFunction(T)
-w = TestFunction(T)
-
-a_proj = inner(sigma_trial, w) * dx
-L_proj = inner(sigma_expr, w) * dx
-
-stress_problem = dolfinx.fem.petsc.LinearProblem(
-    a_proj,
-    L_proj,
-    bcs=[],  # no Dirichlet BCs for stress
-    petsc_options={"ksp_type": "gmres", "pc_type": "lu"},
-    petsc_options_prefix="solver_"
-)
-stress = stress_problem.solve()
-
-stress_coords = T.tabulate_dof_coordinates() #this line is new
-
-stress_vals = stress.x.array.reshape((-1, dim, dim))
-stress_magnitude = np.linalg.norm(stress_vals, axis=(1,2))
-
-x = stress_coords[:, 0] #these three lines are new
-y = stress_coords[:, 1]
-s = stress_magnitude
-
-topology_s, cell_types_s, geometry_s = vtk_mesh(T)
-grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
-grid_s["s_mag"] = stress_magnitude
-
-plotter = pyvista.Plotter()
-plotter.add_mesh(grid_s,scalars="s_mag",cmap="coolwarm",show_edges=False)
-plotter.add_title("Stress Magnitude field")
-plotter.view_xy()
-plotter.show()
-
-
 def update_obstacle_facets(mesh, cell_tags, old_facet_tags,
                            fluid_tag=1, biofilm_tag=6, obstacle_tag=5):
 
@@ -635,7 +552,10 @@ new_ft_updated = update_obstacle_facets(
 )
 
 
-#-----------------------------------------------------------------------------
+# --- Step 4: Recompute mesh connectivity ---
+mesh.topology.create_connectivity(fdim, mesh.topology.dim)
+mesh.topology.create_connectivity(mesh.topology.dim, fdim)
+
 
 
 def shear_velocity_f(x):
@@ -774,10 +694,8 @@ grid_s["s_mag"] = stress_magnitude
 
 plotter = pyvista.Plotter()
 plotter.add_mesh(grid_s,scalars="s_mag",cmap="coolwarm",show_edges=False)
-plotter.add_title("Stress Magnitude field")
+plotter.add_title("Stress Magnitude field last one")
 plotter.view_xy()
 plotter.show()
-
-
 
 

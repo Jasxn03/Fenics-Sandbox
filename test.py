@@ -53,7 +53,7 @@ import typing
 
 L = 50
 H = 20
-with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/uneven_biofilm_mesh.xdmf", "r") as xdmf:
+with XDMFFile(MPI.COMM_WORLD, "Biofilm Meshes/debug_biofilm_mesh.xdmf", "r") as xdmf:
     mesh = xdmf.read_mesh(name = "mesh")
     ft = xdmf.read_meshtags(mesh, name="Facet markers")
     ct = xdmf.read_meshtags(mesh, name="Cell tags")
@@ -209,7 +209,7 @@ plotter.add_title("Velocity field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/uneven_velocity_field.png")
+plotter.screenshot(f"{folder}/debug_velocity_field.png")
 plotter.close()
 
 
@@ -242,7 +242,7 @@ plotter.add_mesh(glyphs, color="black")
 
 plotter.add_title("Velocity field (biofilm masked)")
 plotter.view_xy()
-plotter.screenshot(f"{folder}/uneven_velocity_field_masked.png")
+plotter.screenshot(f"{folder}/debug_velocity_field_masked.png")
 plotter.close()
 
 
@@ -257,7 +257,7 @@ plotter.add_title("Pressure field")
 plotter.view_xy()
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/uneven_pressure_field.png")
+plotter.screenshot(f"{folder}/debug_pressure_field.png")
 plotter.close()
 
 print("plotting finished")
@@ -317,7 +317,7 @@ plt.title("Boundary stress")
 plt.show()
 
 data = np.column_stack((coords_boundary[:, 0], coords_boundary[:, 1], stress_mag_boundary))
-np.savetxt(f"{folder}/uneven_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
+np.savetxt(f"{folder}/debug_boundary_stress.csv", data, delimiter=",", header="x,y,stress_mag", comments="")
 
 topology_s, cell_types_s, geometry_s = vtk_mesh(T)
 grid_s = pyvista.UnstructuredGrid(topology_s, cell_types_s, geometry_s)
@@ -330,7 +330,7 @@ plotter.view_xy()
 
 folder = "steady_stokes_results"
 os.makedirs(folder, exist_ok=True)
-plotter.screenshot(f"{folder}/uneven_stress_field.png")
+plotter.screenshot(f"{folder}/debug_stress_field.png")
 plotter.close()
 
 # --- Boundary stress plot with black line overlay ---
