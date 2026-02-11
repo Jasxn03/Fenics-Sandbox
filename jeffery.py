@@ -200,6 +200,9 @@ u, v, w = flow_field(x,y,z)
 velocity_mag = np.sqrt(u*u + v*v + w*w)
 
 print("Surface point:", x, y, z)
+grad = velocity_gradient(x, y, z)
+print("Velocity gradient:", grad)
+
 print("Shear stress magnitude:", stress_mag)
 print("Velocity magnitude:", velocity_mag)
 
@@ -208,7 +211,7 @@ nx, ny = 50, 50
 x_vals = np.linspace(-a, a, nx)
 y_vals = np.linspace(-b, b, ny)
 X, Y = np.meshgrid(x_vals, y_vals)
-Z = np.zeros_like(X)  # z=0 plane
+Z = np.zeros_like(X) 
 
 velocity_mag_grid = np.zeros_like(X)
 shear_stress_grid = np.zeros_like(X)
@@ -216,7 +219,6 @@ shear_stress_grid = np.zeros_like(X)
 for i in range(nx):
     for j in range(ny):
         x, y, z = X[j,i], Y[j,i], Z[j,i]
-        # check if point is inside the ellipsoid
         if (x/a)**2 + (y/b)**2 + (z/c)**2 <= 1.0:
             u, v, w = flow_field(x, y, z)
             velocity_mag_grid[j,i] = np.sqrt(u**2 + v**2 + w**2)
