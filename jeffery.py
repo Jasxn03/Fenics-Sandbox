@@ -10,6 +10,8 @@ a = 2.0
 b = 2.0
 c = 2.0
 
+#region Coefficient definitions
+
 # geometrical integrals
 def Delta(lam):
     return np.sqrt((a*a + lam)*(b*b + lam)*(c*c + lam))
@@ -75,14 +77,6 @@ xii = 1/2 * kappa * (m_2 * n_3 - m_3 * n_2)
 eta = 1/2 * kappa * (m_3 * n_1 - m_1 * n_3)
 xi = 1/2 * kappa * (m_1 * n_2 - m_2 * n_1)
 
-
-# Surface normal 
-
-def surface_normal(x, y, z):
-    n = np.array([x/a**2, y/b**2, z/c**2])
-    return n / np.linalg.norm(n)
-
-
 # Jeffery constants for simple shear
 
 alpha0 = alpha(0)
@@ -109,8 +103,11 @@ U = 2*b*b*B - 2*c*c*C
 V = 2*c*c*C - 2*a*a*A
 W = 2*a*a*A - 2*b*b*B
 
+#endregion
 
-# flow field on ellipsoid boundary (so lambda = 0)
+#region Flow field function
+
+# flow field 
 def flow_field(x,y,z, lam):
     u =( x*(a_bold + gamma_prime(lam)*W - beta_prime(lam)*V - 2*(alpha(lam)+beta(lam)+gamma(lam))*A) 
             + y*(h_bold - xi + gamma_prime(lam)*T - 2*beta(lam)*H + 2*alpha(lam)*H) 
@@ -147,49 +144,9 @@ def flow_field(x,y,z, lam):
             )
     return u ,v ,w
 
+#endregion
 
-# Velocity gradient (finite difference approx)
-
-def velocity_gradient(x, y, z, lam, h=1e-6):
-    u0, v0, w0 = flow_field(x, y, z, lam)
-
-    ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
-    uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
-    uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
-
-    vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
-    vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
-    vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
-
-    wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
-    wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
-    wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
-
-    return np.array([
-        [ux, uy, uz],
-        [vx, vy, vz],
-        [wx, wy, wz]
-    ])
-
-
-# Stress - i need this to be on the boundary
-
-def stress_tensor(x, y, z, lam):
-    grad_u = velocity_gradient(x, y, z, lam)
-    return mu*(grad_u + grad_u.T)
-
-def traction(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    sigma_v = stress_tensor(x, y, z, lam)
-    return sigma_v @ n
-
-def surface_shear_stress(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    t = traction(x, y, z, lam)
-    normal_comp = np.dot(t,n) *n
-    shear_comp = t -normal_comp
-    return np.linalg.norm(shear_comp)
-
+#region Plotting
 
 # nx, ny = 10, 10
 # x_vals = np.linspace(-5, 5, nx)
@@ -234,7 +191,7 @@ def surface_shear_stress(x, y, z, lam):
 # plt.axis('equal')
 # plt.show()
 
-nx, ny, nz = 100, 100, 100
+nx, ny, nz = 100, 100, 100 # about 11 mins for 100x100x100
 x_vals = np.linspace(-5, 5, nx)
 y_vals = np.linspace(-5, 5, ny)
 z_vals = np.linspace(-5, 5, nz)
@@ -248,10 +205,9 @@ X0 = np.zeros_like(Y_yz)
 velocity_xy = np.zeros_like(X_xy)
 velocity_xz = np.zeros_like(X_xz)
 velocity_yz = np.zeros_like(Y_yz)
-shear_stress_grid_xy = np.zeros_like(X_xy)
-shear_stress_grid_xz = np.zeros_like(X_xz)
-shear_stress_grid_yz = np.zeros_like(Y_yz)
 
+time_now = time.ctime() 
+print(f"time: {time_now}")
 start_time = time.time()
 
 for i in range(nx):
@@ -265,10 +221,8 @@ for i in range(nx):
         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
             u, v, w = flow_field(x, y, z, lam)
             velocity_xz[j,i] = np.sqrt(u**2 + v**2 + w**2)
-            shear_stress_grid_xz[j,i] = surface_shear_stress(x, y, z, lam)
         else:
             velocity_xz[j,i] = np.nan
-            shear_stress_grid_xz[j,i] = np.nan
 
 for i in range(nx):
     for j in range(ny):
@@ -281,10 +235,8 @@ for i in range(nx):
         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
             u, v, w = flow_field(x, y, z, lam)
             velocity_xy[j,i] = np.sqrt(u**2 + v**2 + w**2)
-            shear_stress_grid_xy[j,i] = surface_shear_stress(x, y, z, lam)
         else:
             velocity_xy[j,i] = np.nan
-            shear_stress_grid_xy[j,i] = np.nan
 
 for i in range(ny):
     for j in range(nz):
@@ -297,16 +249,14 @@ for i in range(ny):
         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
             u, v, w = flow_field(x, y, z, lam)
             velocity_yz[j,i] = np.sqrt(u**2 + v**2 + w**2)
-            shear_stress_grid_yz[j,i] = surface_shear_stress(x, y, z, lam)
         else:
             velocity_yz[j,i] = np.nan
-            shear_stress_grid_yz[j,i] = np.nan
 
 end_time = time.time()
 
 print(f"runtime:{end_time - start_time:.2f}")
 
-# Plot side by side
+
 fig, axes = plt.subplots(1, 3, figsize=(15,10))
 
 vmin = min(np.min(velocity_xy), np.min(velocity_xz), np.min(velocity_yz))
@@ -337,35 +287,62 @@ fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.046, pad=0.05)
 
 plt.show()
 
+#endregion
 
-# stress
+#region stress
+
+# Surface normal 
+
+def surface_normal(x, y, z):
+    n = np.array([x/a**2, y/b**2, z/c**2])
+    return n / np.linalg.norm(n)
+
+def velocity_gradient(x, y, z, lam, h=1e-6):
+    u0, v0, w0 = flow_field(x, y, z, lam)
+
+    ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
+    uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
+    uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
+
+    vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
+    vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
+    vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
+
+    wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
+    wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
+    wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
+
+    return np.array([
+        [ux, uy, uz],
+        [vx, vy, vz],
+        [wx, wy, wz]
+    ])
+
+def stress_tensor(x, y, z, lam):
+    grad_u = velocity_gradient(x, y, z, lam)
+    return mu*(grad_u + grad_u.T)
+
+def traction(x, y, z, lam):
+    n = surface_normal(x, y, z)
+    sigma_v = stress_tensor(x, y, z, lam)
+    return sigma_v @ n
+
+def surface_shear_stress(x, y, z, lam):
+    n = surface_normal(x, y, z)
+    t = traction(x, y, z, lam)
+    normal_comp = np.dot(t,n) *n
+    shear_comp = t -normal_comp
+    return np.linalg.norm(shear_comp)
 
 n = 100
-x_vals = np.linspace(-a, a, n)
-y_vals = np.linspace(-b, b, n)
-z_vals = np.linspace(-c, c, n)
+x_vals = np.linspace(-5, 5, n)
+y_vals = np.linspace(-5, 5, n)
+z_vals = np.linspace(-5, 5, n)
 
 data = []
 
-
 def compute_shear(x, y, z, lam=0):
-    h = 1e-6
-    u0, v0, w0 = flow_field(x, y, z, lam)
-
-    grad_u = np.zeros((3,3))
-    for i, (dx, dy, dz) in enumerate([(h,0,0),(0,h,0),(0,0,h)]):
-        du = np.array(flow_field(x+dx, y+dy, z+dz, lam)) - np.array([u0,v0,w0])
-        grad_u[:,i] = du / h
-
-    sigma = mu * (grad_u + grad_u.T)
-
-    n = np.array([x/a**2, y/b**2, z/c**2])
-    n /= np.linalg.norm(n)
-
-    t = sigma @ n
-    shear = t - np.dot(t,n)*n
-    return np.linalg.norm(shear)
-
+    return surface_shear_stress(x,y,z,lam)
 
 z = 0
 shear_xy = np.zeros((n,n))
@@ -405,7 +382,7 @@ with open('ellipsoid_shear.csv', 'w', newline='') as f:
     writer.writerow(['x','y','z','shear_stress'])
     writer.writerows(data)
 
-print("Saved all slices shear stress to ellipsoid_shear.csv")
+print("Saved to ellipsoid_shear.csv")
 
 fig, axes = plt.subplots(1,3, figsize=(18,5))
 
@@ -423,4 +400,34 @@ axes[2].set_xlabel('y'); axes[2].set_ylabel('z'); axes[2].axis('equal')
 
 fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.05, pad=0.05)
 plt.show()
+
+n_theta = 400
+theta = np.linspace(0, 2*np.pi, n_theta)
+
+x_ell = a * np.sin(theta)
+y_ell = np.zeros_like(theta)
+z_ell = c * np.cos(theta)
+shear_surface = np.zeros(n_theta)
+
+for i in range(n_theta):
+    shear_surface[i] = compute_shear(x_ell[i], y_ell[i], z_ell[i])
+
+dx_dtheta = a * np.cos(theta)
+dz_dtheta =  -c * np.sin(theta)
+
+ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
+s = np.zeros(n_theta)
+s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
+
+plt.figure(figsize=(7,4))
+plt.plot(s, shear_surface, lw=2)
+plt.xlabel("Arc length along ellipse")
+plt.ylabel("Shear stress magnitude")
+plt.title("Stress by arc length zx plane")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+#endregion
+
 
