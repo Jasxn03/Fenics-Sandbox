@@ -3,7 +3,7 @@ from scipy.integrate import quad
 import sympy as sp
 import matplotlib.pyplot as plt
 import time
-
+import csv
 
 mu = 1.0
 a = 2.0
@@ -336,3 +336,91 @@ axes[2].axis('equal')
 fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.046, pad=0.05)
 
 plt.show()
+
+
+# stress
+
+n = 100
+x_vals = np.linspace(-a, a, n)
+y_vals = np.linspace(-b, b, n)
+z_vals = np.linspace(-c, c, n)
+
+data = []
+
+
+def compute_shear(x, y, z, lam=0):
+    h = 1e-6
+    u0, v0, w0 = flow_field(x, y, z, lam)
+
+    grad_u = np.zeros((3,3))
+    for i, (dx, dy, dz) in enumerate([(h,0,0),(0,h,0),(0,0,h)]):
+        du = np.array(flow_field(x+dx, y+dy, z+dz, lam)) - np.array([u0,v0,w0])
+        grad_u[:,i] = du / h
+
+    sigma = mu * (grad_u + grad_u.T)
+
+    n = np.array([x/a**2, y/b**2, z/c**2])
+    n /= np.linalg.norm(n)
+
+    t = sigma @ n
+    shear = t - np.dot(t,n)*n
+    return np.linalg.norm(shear)
+
+
+z = 0
+shear_xy = np.zeros((n,n))
+for i, x in enumerate(x_vals):
+    for j, y in enumerate(y_vals):
+        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+            s = compute_shear(x, y, z)
+            shear_xy[j,i] = s
+            data.append([x, y, z, s])
+        else:
+            shear_xy[j,i] = np.nan
+
+y = 0
+shear_xz = np.zeros((n,n))
+for i, x in enumerate(x_vals):
+    for j, z in enumerate(z_vals):
+        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+            s = compute_shear(x, y, z)
+            shear_xz[j,i] = s
+            data.append([x, y, z, s])
+        else:
+            shear_xz[j,i] = np.nan
+
+x = 0
+shear_yz = np.zeros((n,n))
+for i, y in enumerate(y_vals):
+    for j, z in enumerate(z_vals):
+        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+            s = compute_shear(x, y, z)
+            shear_yz[j,i] = s
+            data.append([x, y, z, s])
+        else:
+            shear_yz[j,i] = np.nan
+
+with open('ellipsoid_shear.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['x','y','z','shear_stress'])
+    writer.writerows(data)
+
+print("Saved all slices shear stress to ellipsoid_shear.csv")
+
+fig, axes = plt.subplots(1,3, figsize=(18,5))
+
+im0 = axes[0].contourf(x_vals, y_vals, shear_xy, levels=50, cmap='viridis')
+axes[0].set_title('x-y slice (z=0)')
+axes[0].set_xlabel('x'); axes[0].set_ylabel('y'); axes[0].axis('equal')
+
+im1 = axes[1].contourf(x_vals, z_vals, shear_xz, levels=50, cmap='viridis')
+axes[1].set_title('x-z slice (y=0)')
+axes[1].set_xlabel('x'); axes[1].set_ylabel('z'); axes[1].axis('equal')
+
+im2 = axes[2].contourf(y_vals, z_vals, shear_yz, levels=50, cmap='viridis')
+axes[2].set_title('y-z slice (x=0)')
+axes[2].set_xlabel('y'); axes[2].set_ylabel('z'); axes[2].axis('equal')
+
+fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.05, pad=0.05)
+plt.show()
+
