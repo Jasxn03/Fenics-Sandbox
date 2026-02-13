@@ -191,101 +191,104 @@ def flow_field(x,y,z, lam):
 # plt.axis('equal')
 # plt.show()
 
-nx, ny, nz = 100, 100, 100 # about 11 mins for 100x100x100
-x_vals = np.linspace(-5, 5, nx)
-y_vals = np.linspace(-5, 5, ny)
-z_vals = np.linspace(-5, 5, nz)
-X_xz, Z_xz = np.meshgrid(x_vals, z_vals)
-Y0 = np.zeros_like(X_xz) 
-X_xy, Y_xy = np.meshgrid(x_vals, y_vals)
-Z0 = np.zeros_like(X_xy) 
-Y_yz, Z_yz = np.meshgrid(y_vals, z_vals)
-X0 = np.zeros_like(Y_yz) 
+# above this line was commented out
+#--------------------------------------------------------------------------------------------------------
 
-velocity_xy = np.zeros_like(X_xy)
-velocity_xz = np.zeros_like(X_xz)
-velocity_yz = np.zeros_like(Y_yz)
+# nx, ny, nz = 100, 100, 100 # about 11 mins for 100x100x100
+# x_vals = np.linspace(-5, 5, nx)
+# y_vals = np.linspace(-5, 5, ny)
+# z_vals = np.linspace(-5, 5, nz)
+# X_xz, Z_xz = np.meshgrid(x_vals, z_vals)
+# Y0 = np.zeros_like(X_xz) 
+# X_xy, Y_xy = np.meshgrid(x_vals, y_vals)
+# Z0 = np.zeros_like(X_xy) 
+# Y_yz, Z_yz = np.meshgrid(y_vals, z_vals)
+# X0 = np.zeros_like(Y_yz) 
 
-time_now = time.ctime() 
-print(f"time: {time_now}")
-start_time = time.time()
+# velocity_xy = np.zeros_like(X_xy)
+# velocity_xz = np.zeros_like(X_xz)
+# velocity_yz = np.zeros_like(Y_yz)
 
-for i in range(nx):
-    for j in range(nz):
-        x, y, z = X_xz[j,i], Y0[j,i], Z_xz[j,i]
-        c1 = a*a + c*c - x*x - z*z 
-        c2 = a*a*c*c - a*a*z*z - c*c*x*x
-        lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
-        lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
-        lam = np.max([lam1, lam2])
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            u, v, w = flow_field(x, y, z, lam)
-            velocity_xz[j,i] = np.sqrt(u**2 + v**2 + w**2)
-        else:
-            velocity_xz[j,i] = np.nan
+# time_now = time.ctime() 
+# print(f"time: {time_now}")
+# start_time = time.time()
 
-for i in range(nx):
-    for j in range(ny):
-        x, y, z = X_xy[j,i], Y_xy[j,i], Z0[j,i]
-        c1 = a*a + b*b - x*x - y*y
-        c2 = a*a*b*b - b*b*x*x - a*a*y*y
-        lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
-        lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
-        lam = np.max([lam1, lam2])
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            u, v, w = flow_field(x, y, z, lam)
-            velocity_xy[j,i] = np.sqrt(u**2 + v**2 + w**2)
-        else:
-            velocity_xy[j,i] = np.nan
+# for i in range(nx):
+#     for j in range(nz):
+#         x, y, z = X_xz[j,i], Y0[j,i], Z_xz[j,i]
+#         c1 = a*a + c*c - x*x - z*z 
+#         c2 = a*a*c*c - a*a*z*z - c*c*x*x
+#         lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
+#         lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
+#         lam = np.max([lam1, lam2])
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             u, v, w = flow_field(x, y, z, lam)
+#             velocity_xz[j,i] = np.sqrt(u**2 + v**2 + w**2)
+#         else:
+#             velocity_xz[j,i] = np.nan
 
-for i in range(ny):
-    for j in range(nz):
-        x, y, z = X0[j,i], Y_yz[j,i], Z_yz[j,i]
-        c1 = c*c + b*b - z*z - y*y
-        c2 = c*c*b*b - b*b*z*z - c*c*y*y
-        lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
-        lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
-        lam = np.max([lam1, lam2])
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            u, v, w = flow_field(x, y, z, lam)
-            velocity_yz[j,i] = np.sqrt(u**2 + v**2 + w**2)
-        else:
-            velocity_yz[j,i] = np.nan
+# for i in range(nx):
+#     for j in range(ny):
+#         x, y, z = X_xy[j,i], Y_xy[j,i], Z0[j,i]
+#         c1 = a*a + b*b - x*x - y*y
+#         c2 = a*a*b*b - b*b*x*x - a*a*y*y
+#         lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
+#         lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
+#         lam = np.max([lam1, lam2])
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             u, v, w = flow_field(x, y, z, lam)
+#             velocity_xy[j,i] = np.sqrt(u**2 + v**2 + w**2)
+#         else:
+#             velocity_xy[j,i] = np.nan
 
-end_time = time.time()
+# for i in range(ny):
+#     for j in range(nz):
+#         x, y, z = X0[j,i], Y_yz[j,i], Z_yz[j,i]
+#         c1 = c*c + b*b - z*z - y*y
+#         c2 = c*c*b*b - b*b*z*z - c*c*y*y
+#         lam1 = (-c1 + np.sqrt(c1*c1 - 4*c2))/2
+#         lam2 = (-c1 - np.sqrt(c1*c1 - 4*c2))/2
+#         lam = np.max([lam1, lam2])
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             u, v, w = flow_field(x, y, z, lam)
+#             velocity_yz[j,i] = np.sqrt(u**2 + v**2 + w**2)
+#         else:
+#             velocity_yz[j,i] = np.nan
 
-print(f"runtime:{end_time - start_time:.2f}")
+# end_time = time.time()
+
+# print(f"runtime:{end_time - start_time:.2f}")
 
 
-fig, axes = plt.subplots(1, 3, figsize=(15,10))
+# fig, axes = plt.subplots(1, 3, figsize=(15,10))
 
-vmin = min(np.min(velocity_xy), np.min(velocity_xz), np.min(velocity_yz))
-vmax = max(np.max(velocity_xy), np.max(velocity_xz), np.max(velocity_yz))
+# vmin = min(np.min(velocity_xy), np.min(velocity_xz), np.min(velocity_yz))
+# vmax = max(np.max(velocity_xy), np.max(velocity_xz), np.max(velocity_yz))
 
-# x-y slice (z=0)
-im0 = axes[0].contourf(X_xy, Y_xy, velocity_xy, levels=50, cmap='viridis')
-axes[0].set_title('Velocity Magnitude (z=0 slice)')
-axes[0].set_xlabel('x')
-axes[0].set_ylabel('y')
-axes[0].axis('equal')
+# # x-y slice (z=0)
+# im0 = axes[0].contourf(X_xy, Y_xy, velocity_xy, levels=50, cmap='viridis')
+# axes[0].set_title('Velocity Magnitude (z=0 slice)')
+# axes[0].set_xlabel('x')
+# axes[0].set_ylabel('y')
+# axes[0].axis('equal')
 
-# x-z slice (y=0)
-im1 = axes[1].contourf(X_xz, Z_xz, velocity_xz, levels=50, cmap='viridis')
-axes[1].set_title('Velocity Magnitude (y=0 slice)')
-axes[1].set_xlabel('x')
-axes[1].set_ylabel('z')
-axes[1].axis('equal')
+# # x-z slice (y=0)
+# im1 = axes[1].contourf(X_xz, Z_xz, velocity_xz, levels=50, cmap='viridis')
+# axes[1].set_title('Velocity Magnitude (y=0 slice)')
+# axes[1].set_xlabel('x')
+# axes[1].set_ylabel('z')
+# axes[1].axis('equal')
 
-# y-z slice (x=0)
-im2 = axes[2].contourf(Y_yz, Z_yz, velocity_yz, levels=50, cmap='viridis')
-axes[2].set_title('Velocity Magnitude (x=0 slice)')
-axes[2].set_xlabel('y')
-axes[2].set_ylabel('z')
-axes[2].axis('equal')
+# # y-z slice (x=0)
+# im2 = axes[2].contourf(Y_yz, Z_yz, velocity_yz, levels=50, cmap='viridis')
+# axes[2].set_title('Velocity Magnitude (x=0 slice)')
+# axes[2].set_xlabel('y')
+# axes[2].set_ylabel('z')
+# axes[2].axis('equal')
 
-fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.046, pad=0.05)
+# fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.046, pad=0.05)
 
-plt.show()
+# plt.show()
 
 #endregion
 
@@ -293,141 +296,215 @@ plt.show()
 
 # Surface normal 
 
-def surface_normal(x, y, z):
-    n = np.array([x/a**2, y/b**2, z/c**2])
-    return n / np.linalg.norm(n)
+# def surface_normal(x, y, z):
+#     n = np.array([x/a**2, y/b**2, z/c**2])
+#     return n / np.linalg.norm(n)
 
-def velocity_gradient(x, y, z, lam, h=1e-6):
-    u0, v0, w0 = flow_field(x, y, z, lam)
+# def velocity_gradient(x, y, z, lam, h=1e-5):
+#     u0, v0, w0 = flow_field(x, y, z, lam)
 
-    ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
-    uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
-    uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
+#     ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
+#     uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
+#     uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
 
-    vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
-    vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
-    vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
+#     vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
+#     vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
+#     vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
 
-    wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
-    wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
-    wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
+#     wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
+#     wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
+#     wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
 
-    return np.array([
-        [ux, uy, uz],
-        [vx, vy, vz],
-        [wx, wy, wz]
-    ])
+#     return np.array([
+#         [ux, uy, uz],
+#         [vx, vy, vz],
+#         [wx, wy, wz]
+#     ])
 
-def stress_tensor(x, y, z, lam):
-    grad_u = velocity_gradient(x, y, z, lam)
-    return mu*(grad_u + grad_u.T)
+# def stress_tensor(x, y, z, lam):
+#     grad_u = velocity_gradient(x, y, z, lam)
+#     return mu*(grad_u + grad_u.T)
 
-def traction(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    sigma_v = stress_tensor(x, y, z, lam)
-    return sigma_v @ n
+# def traction(x, y, z, lam):
+#     n = surface_normal(x, y, z)
+#     sigma_v = stress_tensor(x, y, z, lam)
+#     return sigma_v @ n
 
-def surface_shear_stress(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    t = traction(x, y, z, lam)
-    normal_comp = np.dot(t,n) *n
-    shear_comp = t -normal_comp
-    return np.linalg.norm(shear_comp)
+# def surface_shear_stress(x, y, z, lam):
+#     n = surface_normal(x, y, z)
+#     t = traction(x, y, z, lam)
+#     normal_comp = np.dot(t,n) *n
+#     shear_comp = t -normal_comp
+#     return np.linalg.norm(shear_comp)
 
-n = 100
-x_vals = np.linspace(-5, 5, n)
-y_vals = np.linspace(-5, 5, n)
-z_vals = np.linspace(-5, 5, n)
+# n = 100
+# x_vals = np.linspace(-5, 5, n)
+# y_vals = np.linspace(-5, 5, n)
+# z_vals = np.linspace(-5, 5, n)
 
-data = []
+# data = []
 
-def compute_shear(x, y, z, lam=0):
-    return surface_shear_stress(x,y,z,lam)
+# def compute_shear(x, y, z, lam=0):
+#     return surface_shear_stress(x,y,z,lam)
 
-z = 0
-shear_xy = np.zeros((n,n))
-for i, x in enumerate(x_vals):
-    for j, y in enumerate(y_vals):
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            s = compute_shear(x, y, z)
-            shear_xy[j,i] = s
-            data.append([x, y, z, s])
-        else:
-            shear_xy[j,i] = np.nan
+# z = 0
+# shear_xy = np.zeros((n,n))
+# for i, x in enumerate(x_vals):
+#     for j, y in enumerate(y_vals):
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             s = compute_shear(x, y, z)
+#             shear_xy[j,i] = s
+#             data.append([x, y, z, s])
+#         else:
+#             shear_xy[j,i] = np.nan
 
-y = 0
-shear_xz = np.zeros((n,n))
-for i, x in enumerate(x_vals):
-    for j, z in enumerate(z_vals):
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            s = compute_shear(x, y, z)
-            shear_xz[j,i] = s
-            data.append([x, y, z, s])
-        else:
-            shear_xz[j,i] = np.nan
+# y = 0
+# shear_xz = np.zeros((n,n))
+# for i, x in enumerate(x_vals):
+#     for j, z in enumerate(z_vals):
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             s = compute_shear(x, y, z)
+#             shear_xz[j,i] = s
+#             data.append([x, y, z, s])
+#         else:
+#             shear_xz[j,i] = np.nan
 
-x = 0
-shear_yz = np.zeros((n,n))
-for i, y in enumerate(y_vals):
-    for j, z in enumerate(z_vals):
-        if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
-            s = compute_shear(x, y, z)
-            shear_yz[j,i] = s
-            data.append([x, y, z, s])
-        else:
-            shear_yz[j,i] = np.nan
+# x = 0
+# shear_yz = np.zeros((n,n))
+# for i, y in enumerate(y_vals):
+#     for j, z in enumerate(z_vals):
+#         if (x/a)**2 + (y/b)**2 + (z/c)**2 >= 1.0:
+#             s = compute_shear(x, y, z)
+#             shear_yz[j,i] = s
+#             data.append([x, y, z, s])
+#         else:
+#             shear_yz[j,i] = np.nan
 
-with open('ellipsoid_shear.csv', 'w', newline='') as f:
-    writer = csv.writer(f)
-    writer.writerow(['x','y','z','shear_stress'])
-    writer.writerows(data)
+# with open('ellipsoid_shear.csv', 'w', newline='') as f:
+#     writer = csv.writer(f)
+#     writer.writerow(['x','y','z','shear_stress'])
+#     writer.writerows(data)
 
-print("Saved to ellipsoid_shear.csv")
+# print("Saved to ellipsoid_shear.csv")
 
-fig, axes = plt.subplots(1,3, figsize=(18,5))
+# fig, axes = plt.subplots(1,3, figsize=(18,5))
 
-im0 = axes[0].contourf(x_vals, y_vals, shear_xy, levels=50, cmap='viridis')
-axes[0].set_title('x-y slice (z=0)')
-axes[0].set_xlabel('x'); axes[0].set_ylabel('y'); axes[0].axis('equal')
+# im0 = axes[0].contourf(x_vals, y_vals, shear_xy, levels=50, cmap='viridis')
+# axes[0].set_title('x-y slice (z=0)')
+# axes[0].set_xlabel('x'); axes[0].set_ylabel('y'); axes[0].axis('equal')
 
-im1 = axes[1].contourf(x_vals, z_vals, shear_xz, levels=50, cmap='viridis')
-axes[1].set_title('x-z slice (y=0)')
-axes[1].set_xlabel('x'); axes[1].set_ylabel('z'); axes[1].axis('equal')
+# im1 = axes[1].contourf(x_vals, z_vals, shear_xz, levels=50, cmap='viridis')
+# axes[1].set_title('x-z slice (y=0)')
+# axes[1].set_xlabel('x'); axes[1].set_ylabel('z'); axes[1].axis('equal')
 
-im2 = axes[2].contourf(y_vals, z_vals, shear_yz, levels=50, cmap='viridis')
-axes[2].set_title('y-z slice (x=0)')
-axes[2].set_xlabel('y'); axes[2].set_ylabel('z'); axes[2].axis('equal')
+# im2 = axes[2].contourf(y_vals, z_vals, shear_yz, levels=50, cmap='viridis')
+# axes[2].set_title('y-z slice (x=0)')
+# axes[2].set_xlabel('y'); axes[2].set_ylabel('z'); axes[2].axis('equal')
 
-fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.05, pad=0.05)
-plt.show()
+# fig.colorbar(im0, ax=axes, orientation='vertical', fraction=0.05, pad=0.05)
+# plt.show()
+
 
 n_theta = 400
 theta = np.linspace(0, 2*np.pi, n_theta)
 
-x_ell = a * np.sin(theta)
-y_ell = np.zeros_like(theta)
-z_ell = c * np.cos(theta)
-shear_surface = np.zeros(n_theta)
+x_ell = a * np.cos(theta) # THIS HAS BEEN CHANGED - WAS X = A SIN THETA, Y = 0, Z = C COS THETA
+y_ell = b* np.sin(theta)
+z_ell = np.ones_like(theta)
+
+x_ell = a*np.sin(theta)
+
+# shear_surface = np.zeros(n_theta)
+
+# for i in range(n_theta):
+#     shear_surface[i] = compute_shear(x_ell[i], y_ell[i], z_ell[i])
+
+# dx_dtheta = a * np.cos(theta)
+# dz_dtheta =  -c * np.sin(theta)
+
+# ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
+# s = np.zeros(n_theta)
+# s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
+
+# plt.figure(figsize=(7,4))
+# plt.plot(s, shear_surface, lw=2)
+# plt.xlabel("Arc length along ellipse")
+# plt.ylabel("Shear stress magnitude")
+# plt.title("Stress by arc length zx plane")
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
+
+#endregion
+
+# analytical stress
+
+shear_surface_a = np.zeros(n_theta)
+
+def analytical_shear_stress(x,y,z):
+    u_x = a_bold + gamma_prime0*W - beta_prime0*V - 2*(alpha0 + beta0 + gamma0)*A
+    v_y = b_bold + alpha_prime0*U - gamma_prime0*W - 2*(alpha0 + beta0 + gamma0)*B
+    w_z = c_bold + beta_prime0*V - alpha_prime0*U - 2*(alpha0 + beta0 + gamma0)*C
+
+    P0 = 1 / (np.sqrt(((x*x)/(a*a*a*a))+((y*y)/(b*b*b*b))+((z*z)/(c*c*c*c))))
+
+    long = (2*mu*u_x*P0*P0*x*x)/(a*a*a*a)+(2*mu*v_y*P0*P0*y*y)/(b*b*b*b)+(2*mu*w_z*P0*P0*z*z)/(c*c*c*c)
+
+    tau_1 = 2*mu*u_x *P0 * x/(a*a) - long * (P0 * x / (a*a))
+    tau_2 = 2*mu*v_y *P0 * y/(b*b) - long * (P0 * y / (b*b))
+    tau_3 = 2*mu*w_z *P0 * z/(c*c) - long * (P0 * z / (c*c))
+
+    mag = np.sqrt(tau_1*tau_1 + tau_2 * tau_2 + tau_3 * tau_3)
+    return mag
 
 for i in range(n_theta):
-    shear_surface[i] = compute_shear(x_ell[i], y_ell[i], z_ell[i])
+    shear_surface_a[i] = analytical_shear_stress(x_ell[i], y_ell[i], z_ell[i])
 
-dx_dtheta = a * np.cos(theta)
-dz_dtheta =  -c * np.sin(theta)
+dx_dtheta = -a * np.sin(theta)
+dz_dtheta =  b * np.cos(theta)
 
 ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
 s = np.zeros(n_theta)
 s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
 
 plt.figure(figsize=(7,4))
-plt.plot(s, shear_surface, lw=2)
+plt.plot(s, shear_surface_a, lw=2)
 plt.xlabel("Arc length along ellipse")
 plt.ylabel("Shear stress magnitude")
-plt.title("Stress by arc length zx plane")
+plt.title("Analytical Version")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-#endregion
 
+
+# comparison of numerical vs analytical
+
+# fig, axes = plt.subplots(1, 2, figsize=(12,4))
+
+# axes[0].plot(s, shear_surface, lw=2)
+# axes[0].set_xlabel("Arc length")
+# axes[0].set_ylabel("Shear stress magnitude")
+# axes[0].set_title("Numerical")
+# axes[0].grid(True)
+
+# axes[1].plot(s, shear_surface_a, lw=2)
+# axes[1].set_xlabel("Arc length")
+# axes[1].set_ylabel("Shear stress magnitude")
+# axes[1].set_title("Analytical")
+# axes[1].grid(True)
+
+# plt.tight_layout()
+# plt.show()
+
+# difference
+
+# plt.figure(figsize=(7,4))
+# plt.plot(s, shear_surface - shear_surface_a, lw=2)
+# plt.xlabel("Arc length")
+# plt.ylabel("Difference")
+# plt.title("Numerical - Analytical")
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
 

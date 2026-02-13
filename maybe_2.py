@@ -66,7 +66,7 @@ mu_field_prev = None
 ct_current = ct
 ft_current = ft
 max_iterations = 5
-stress_threshold = 0.01
+stress_threshold = 0.1
 inlet_marker, outlet_marker, wall_marker, obstacle_marker = 2, 3, 4, 5
 
 

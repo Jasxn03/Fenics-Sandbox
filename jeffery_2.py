@@ -52,5 +52,53 @@ plt.ylabel('y')
 plt.title('Stokes Flow Past Sphere (z=0 slice)')
 plt.show()
 
+# Function to compute surface normal for sphere
+def surface_normal_sphere(x, y, z, a):
+    n = np.array([x, y, z]) / a
+    return n / np.linalg.norm(n)
 
+# Finite difference to compute velocity gradient
+def velocity_gradient_fd(x, y, z, h=1e-6):
+    u0 = np.array([U_interp(x, y, z) for U_interp in [U_grid_func, V_grid_func, W_grid_func]])
+    grad = np.zeros((3,3))
+    for i, (dx, dy, dz) in enumerate([(h,0,0),(0,h,0),(0,0,h)]):
+        u_h = np.array([U_interp(x+dx, y+dy, z+dz) for U_interp in [U_grid_func, V_grid_func, W_grid_func]])
+        grad[:,i] = (u_h - u0)/h
+    return grad
+
+# Interpolation functions for velocity grids
+from scipy.interpolate import RegularGridInterpolator
+U_grid_func = RegularGridInterpolator((y_vals, x_vals), U_grid)
+V_grid_func = RegularGridInterpolator((y_vals, x_vals), V_grid)
+W_grid_func = RegularGridInterpolator((y_vals, x_vals), W_grid)
+
+# Compute shear on the sphere surface in xy-plane (z=0)
+n_theta = 400
+theta = np.linspace(0, 2*np.pi, n_theta)
+shear_surface = np.zeros(n_theta)
+x_surf = a * np.cos(theta)
+y_surf = a * np.sin(theta)
+z_surf = np.zeros_like(theta)
+
+for i in range(n_theta):
+    x, y, z = x_surf[i], y_surf[i], z_surf[i]
+    n_vec = surface_normal_sphere(x, y, z, a)
+    grad_u = velocity_gradient_fd(x, y, z)
+    sigma = mu * (grad_u + grad_u.T)
+    traction = sigma @ n_vec
+    shear_vec = traction - np.dot(traction, n_vec) * n_vec
+    shear_surface[i] = np.linalg.norm(shear_vec)
+
+# Arc length along circle
+ds = 2*np.pi*a / n_theta
+s = np.arange(n_theta) * ds
+
+# Plot shear
+plt.figure(figsize=(7,4))
+plt.plot(s, shear_surface, lw=2)
+plt.xlabel('Arc length along circle')
+plt.ylabel('Surface shear stress')
+plt.title('Surface Shear Stress on Sphere (z=0 plane)')
+plt.grid(True)
+plt.show()
 
