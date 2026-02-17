@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 k = 1500       
-a = 2.0       
+a = 1.0       
 mu = 1.0    
 
 def velocity_field(x, y, z):
@@ -61,9 +61,13 @@ shear_surface_a = np.zeros(n_theta)
 # y_ell = np.zeros_like(theta)
 # z_ell = a * np.cos(theta)
 
-x_ell = np.zeros_like(theta)
+# x_ell = np.zeros_like(theta)
+# y_ell = a * np.cos(theta)
+# z_ell = a * np.sin(theta)
+
+x_ell = a*np.sin(theta)
 y_ell = a * np.cos(theta)
-z_ell = a * np.sin(theta)
+z_ell = np.zeros_like(theta)
 
 dx_dtheta = a * np.cos(theta)
 dz_dtheta =  -a * np.sin(theta)
