@@ -144,6 +144,8 @@ def flow_field(x,y,z, lam):
             )
     return u ,v ,w
 
+print("no slip maybe", flow_field(0,0,1,0))
+
 #endregion
 
 #region Plotting
@@ -296,46 +298,46 @@ def flow_field(x,y,z, lam):
 
 # Surface normal 
 
-def surface_normal(x, y, z):
-    n = np.array([x/a**2, y/b**2, z/c**2])
-    return n / np.linalg.norm(n)
+# def surface_normal(x, y, z):
+#     n = np.array([x/a**2, y/b**2, z/c**2])
+#     return n / np.linalg.norm(n)
 
-def velocity_gradient(x, y, z, lam, h=1e-5):
-    u0, v0, w0 = flow_field(x, y, z, lam)
+# def velocity_gradient(x, y, z, lam, h=1e-5):
+#     u0, v0, w0 = flow_field(x, y, z, lam)
 
-    ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
-    uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
-    uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
+#     ux = (flow_field(x+h, y, z, lam)[0] - u0) / h
+#     uy = (flow_field(x, y+h, z, lam)[0] - u0) / h
+#     uz = (flow_field(x, y, z+h, lam)[0] - u0) / h
 
-    vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
-    vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
-    vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
+#     vx = (flow_field(x+h, y, z, lam)[1] - v0) / h
+#     vy = (flow_field(x, y+h, z, lam)[1] - v0) / h
+#     vz = (flow_field(x, y, z+h, lam)[1] - v0) / h
 
-    wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
-    wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
-    wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
+#     wx = (flow_field(x+h, y, z, lam)[2] - w0) / h
+#     wy = (flow_field(x, y+h, z, lam)[2] - w0) / h
+#     wz = (flow_field(x, y, z+h, lam)[2] - w0) / h
 
-    return np.array([
-        [ux, uy, uz],
-        [vx, vy, vz],
-        [wx, wy, wz]
-    ])
+#     return np.array([
+#         [ux, uy, uz],
+#         [vx, vy, vz],
+#         [wx, wy, wz]
+#     ])
 
-def stress_tensor(x, y, z, lam):
-    grad_u = velocity_gradient(x, y, z, lam)
-    return mu*(grad_u + grad_u.T)
+# def stress_tensor(x, y, z, lam):
+#     grad_u = velocity_gradient(x, y, z, lam)
+#     return mu*(grad_u + grad_u.T)
 
-def traction(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    sigma_v = stress_tensor(x, y, z, lam)
-    return sigma_v @ n
+# def traction(x, y, z, lam):
+#     n = surface_normal(x, y, z)
+#     sigma_v = stress_tensor(x, y, z, lam)
+#     return sigma_v @ n
 
-def surface_shear_stress(x, y, z, lam):
-    n = surface_normal(x, y, z)
-    t = traction(x, y, z, lam)
-    normal_comp = np.dot(t,n) *n
-    shear_comp = t -normal_comp
-    return np.linalg.norm(shear_comp)
+# def surface_shear_stress(x, y, z, lam):
+#     n = surface_normal(x, y, z)
+#     t = traction(x, y, z, lam)
+#     normal_comp = np.dot(t,n) *n
+#     shear_comp = t -normal_comp
+#     return np.linalg.norm(shear_comp)
 
 # n = 100
 # x_vals = np.linspace(-5, 5, n)
@@ -344,8 +346,8 @@ def surface_shear_stress(x, y, z, lam):
 
 # data = []
 
-def compute_shear(x, y, z, lam=0):
-    return surface_shear_stress(x,y,z,lam)
+# def compute_shear(x, y, z, lam=0):
+#     return surface_shear_stress(x,y,z,lam)
 
 # z = 0
 # shear_xy = np.zeros((n,n))
@@ -405,39 +407,47 @@ def compute_shear(x, y, z, lam=0):
 # plt.show()
 
 
-n_theta = 400
-theta = np.linspace(0, 2*np.pi, n_theta)
+# n_theta = 400
+# theta = np.linspace(0, 2*np.pi, n_theta)
 
-x_ell = a * np.sin(theta) # THIS HAS BEEN CHANGED - WAS X = A SIN THETA, Y = 0, Z = C COS THETA
-y_ell = np.zeros_like(theta)
-z_ell = c * np.cos(theta)
+# x_ell = a * np.sin(theta) # THIS HAS BEEN CHANGED - WAS X = A SIN THETA, Y = 0, Z = C COS THETA
+# y_ell = np.zeros_like(theta)
+# z_ell = c * np.cos(theta)
 
-shear_surface = np.zeros(n_theta)
+# shear_surface = np.zeros(n_theta)
 
-for i in range(n_theta):
-    shear_surface[i] = compute_shear(x_ell[i], y_ell[i], z_ell[i])
+# for i in range(n_theta):
+#     shear_surface[i] = compute_shear(x_ell[i], y_ell[i], z_ell[i])
 
-dx_dtheta = a * np.cos(theta)
-dz_dtheta =  -c * np.sin(theta)
+# dx_dtheta = a * np.cos(theta)
+# dz_dtheta =  -c * np.sin(theta)
 
-ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
-s = np.zeros(n_theta)
-s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
+# ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
+# s = np.zeros(n_theta)
+# s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
 
-plt.figure(figsize=(7,4))
-plt.plot(s, shear_surface, lw=2)
-plt.xlabel("Arc length along ellipse")
-plt.ylabel("Shear stress magnitude")
-plt.title("Stress by arc length zx plane")
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# plt.figure(figsize=(7,4))
+# plt.plot(s, shear_surface, lw=2)
+# plt.xlabel("Arc length along ellipse")
+# plt.ylabel("Shear stress magnitude")
+# plt.title("Stress by arc length zx plane")
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
 
 #endregion
 
 # analytical stress
 
+n_theta = 400
+
 shear_surface_a = np.zeros(n_theta)
+
+theta = np.linspace(0, 2*np.pi, n_theta)
+x_ell = a * np.sin(theta) # THIS HAS BEEN CHANGED - WAS X = A SIN THETA, Y = 0, Z = C COS THETA
+y_ell = np.zeros_like(theta)
+z_ell = c * np.cos(theta)
+
 
 def analytical_shear_stress(x,y,z, lam = 0):
     u_x = (a_bold + gamma_prime0*W - beta_prime0*V - 2*(alpha0 + beta0 + gamma0)*A + (2*x*P_squared(x,y,z,lam))/(a*a*Delta(lam)) 
@@ -662,7 +672,6 @@ print('component 1 of stress at (1,1,1):', div_stress(1, 1, 0)[0])
 print('component 2 of stress at (1,1,1):', div_stress(1, 1, 0)[1])
 print('component 3 of stress at (1,1,1):', div_stress(1, 1, 0)[2])
 
-
 n_theta = 400
 theta = np.linspace(0, 2*np.pi, n_theta)
 x_ell = a * np.sin(theta)  
@@ -687,6 +696,39 @@ plt.title("should be 0")
 plt.grid(True)
 plt.show()
 
+def xy_comp(x,y,z,lam =0):
+    p_y = (-2*y)/(b**4) * (1/(x**2/a**4 + y**2/b**4 + z**2/c**4))**2
+    l_y = 2*y*P_squared(x,y,z,0)/b**2
+    g_y = -1/(b**2 * c**2)* l_y
+    P = P_squared(x,y,z,0)**(1/2)
+    # mu = 1 so i can leave out
+
+    comp = (2*T * g_y + ((2*P_squared(x,y,z,lam))/(b**2 * Delta(lam)) + (4*y*P*p_y)/(b**2*Delta(lam))) *  (((-x*W-y*T)/(a*a*b*b) + (x*V-z*S)/(a*a*c*c) + (2*x*A-2*y*H-2*z*G)/(a*a) + (2*x*A+2*y*H)/(b*b) + (2*x*A+2*z*G)/(c*c))
+            - (2*x*P_squared(x,y,z,lam))/(a*a*Delta(lam)) * ((4*F*y*z)/(b*b*c*c) + (4*G*z*x)/(a*a*c*c) + (4*H*x*y)/(a*a*b*b) + (2*(B-A)*y*y)/(b*b*b*b) + (2*(C-A)*z*z)/(c*c*c*c)
+            )
+            )
+            + (2*y*P_squared(x,y,z,lam))/(b**2 * Delta(lam)) * (
+                (-T/(a**2*b**2)-(2*H)/a**2 + (2*H)/b**2) - (4*x*P*p_y)/(a**2*Delta(lam)) * ((4*F*y*z)/(b*b*c*c) + (4*G*z*x)/(a*a*c*c) + (4*H*x*y)/(a*a*b*b) + (2*(B-A)*y*y)/(b*b*b*b) + (2*(C-A)*z*z)/(c*c*c*c)
+            ) - (2*x*P_squared(x,y,z,0))/(a**2 * Delta(0)) * ((4*F*z)/(b**2*c**2) + (4*H*x)/(a**2*b**2) + (4*(B-A)*y)/(b**4))
+            )
+            + 
+            (4*x*P*p_y)/(a**2*Delta(lam)) * (((-x*T+y*W)/(a*a*b*b) + (-y*U-z*R)/(b*b*c*c) + (2*x*H+2*y*B)/(a*a) + (-2*x*H+2*y*B-2*z*F)/(b*b) + (2*y*B+2*z*F)/(c*c))
+            - (2*y*P_squared(x,y,z,lam))/(b*b*Delta(lam)) * ((4*F*y*z)/(b*b*c*c) + (4*G*z*x)/(a*a*c*c) + (4*H*x*y)/(a*a*b*b) + (2*(C-B)*z*z)/(c*c*c*c) + (2*(A-B)*x*x)/(a*a*a*a)
+            )
+            )
+            + (2*x*P_squared(x,y,z,lam))/(a**2*Delta(lam)) * (
+                W/(a**2*b**2) - U/(b**2*c**2)+(2*B)/(a**2)+(2*B)/(b**2) + (2*B)/(c**2) - ((2*P_squared(x,y,z,lam))/(b**2*Delta(lam)) + (4*y*P*p_y)/(b**2*Delta(lam)))*
+                ((4*F*y*z)/(b*b*c*c) + (4*G*z*x)/(a*a*c*c) + (4*H*x*y)/(a*a*b*b) + (2*(C-B)*z*z)/(c*c*c*c) + (2*(A-B)*x*x)/(a*a*a*a)) 
+                -(2*y*P_squared(x,y,z,lam)/(b**2*Delta(lam)))*((4*F*z)/(b**2*c**2)+(4*H*x)/(a**2*b**2))
+            )
+            )
+    return comp
+
+sigma_xy = analytical_stress_tensor(1, 0, 0, 0)[0, 1]
+sigma_xy_a = xy_comp(1, 0, 0, 0)
+
+print("finite xy", sigma_xy)
+print("analytical xy", sigma_xy_a)
 
 
 
