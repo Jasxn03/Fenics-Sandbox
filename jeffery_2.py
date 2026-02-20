@@ -1,4 +1,4 @@
-# kim and karrila sol
+# kim and karilla sol
 
 import numpy as np
 import matplotlib.pyplot as plt
