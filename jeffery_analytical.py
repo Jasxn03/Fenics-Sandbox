@@ -230,7 +230,7 @@ def du_dx(x,y,z,lam):
 
 
 def du_dy(x,y,z,lam):
-    u_y = (x*W*dgammaprime_dy(x,y,z,lam) -V*dbetaprime_dy(x,y,z,lam)-2*A*(dalpha_dy(x,y,z,lam)+ dbeta_dy(x,y,z,lam) + dgamma_dy(x,y,z,lam)) + h_bold - xi + gamma_prime(lam)*T - 2*H*(beta(lam) - alpha(lam)) + T*y*dgammaprime_dy(x,y,z,lam) 
+    u_y = (x*W*dgammaprime_dy(x,y,z,lam) -x*V*dbetaprime_dy(x,y,z,lam)-2*A*x*(dalpha_dy(x,y,z,lam)+ dbeta_dy(x,y,z,lam) + dgamma_dy(x,y,z,lam)) + h_bold - xi + gamma_prime(lam)*T - 2*H*(beta(lam) - alpha(lam)) + T*y*dgammaprime_dy(x,y,z,lam) 
             - 2*y*H*(dbeta_dy(x,y,z,lam) - dalpha_dy(x,y,z,lam)) + z*S*dbetaprime_dy(x,y,z,lam) - 2*G*z*(dgamma_dy(x,y,z,lam) - dalpha_dy(x,y,z,lam))
             + (- (4*x*P(x,y,z,lam)*dP_dy(x,y,z,lam))/((a**2 + lam)*Delta(lam)) + (2*x*P2(x,y,z,lam)*dl_dy(x,y,z,lam))/((a**2 +lam)**2*Delta(lam)) - (2*x*P2(x,y,z,lam)*dDeltaminus_dy(x,y,z,lam))/(a**2 + lam))
             * ((4*lam*F*y*z)/((b*b+lam)*(c*c+lam)) + (4*lam*G*z*x)/((c*c+lam)*(a*a+lam)) + (4*lam*H*x*y)/((a*a+lam)*(b*b+lam))
@@ -428,22 +428,23 @@ def sigma_zz(x,y,z):
     p = pressure(x,y,z,lam)
     return -p + 2*w_z
 
-
-
 def finite_difference_x(f,x,y,z):
     dx = 1e-6
+    dx = 1e-12 * (1 + abs(x) + abs(y) + abs(z))
     plus = f(x+dx,y,z)
     minus = f(x-dx, y,z)
     return (plus - minus)/(2*dx)
 
 def finite_difference_y(f,x,y,z):
     dx = 1e-6
+    dx = 1e-12* (1 + abs(x) + abs(y) + abs(z))
     plus = f(x,y+dx,z)
     minus = f(x,y-dx,z)
     return (plus - minus)/(2*dx)
 
 def finite_difference_z(f,x,y,z):
     dx = 1e-6
+    dx = 1e-12 * (1 + abs(x) + abs(y) + abs(z))
     plus = f(x,y,z+dx)
     minus = f(x, y,z-dx)
     return (plus - minus)/(2*dx)
@@ -455,19 +456,128 @@ print('xz diff', sigma_xz(1,1,1)-sigma_zx(1,1,1))
 print('yz diff', sigma_yz(1,1,1)-sigma_zy(1,1,1))
 
 
+eps = 100
 
-first_comp = finite_difference_x(sigma_xx, 1,1,1) + finite_difference_y(sigma_xy, 1,1,1) + finite_difference_z(sigma_xz,1,1,1)
+first_comp = finite_difference_x(sigma_xx, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_y(sigma_xy, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_z(sigma_xz,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps)
 print('first comp', first_comp)
 
-second_comp = finite_difference_x(sigma_yx, 1,1,1) + finite_difference_y(sigma_yy, 1,1,1) + finite_difference_z(sigma_yz,1,1,1)
+second_comp = finite_difference_x(sigma_yx, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_y(sigma_yy, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_z(sigma_yz,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps)
 print('second comp', second_comp)
 
-third_comp = finite_difference_x(sigma_zx, 1,1,1) + finite_difference_y(sigma_zy, 1,1,1) + finite_difference_z(sigma_zz,1,1,1)
+third_comp = finite_difference_x(sigma_zx, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_y(sigma_zy, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_z(sigma_zz,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps)
 print('third comp', third_comp)
 
+# residuals blow up as we tend towards the surface, i.e as lambda -> 0
 
+eps_values = np.logspace(-5, 5, 100)  # move progressively away from surface
+#eps_values = np.linspace(0.01, 2, 500)  # move progressively away from surface
+lambda_vals = []
 
+first_vals = []
+second_vals = []
+third_vals = []
 
+base = 1/np.sqrt(3)
+
+for eps in eps_values:
+    x = base + eps
+    y = base + eps
+    z = base + eps
+
+    lam = compute_lambda(x, y, z)
+    lambda_vals.append(lam)
+
+    first_comp = (
+        finite_difference_x(sigma_xx, x, y, z)
+        + finite_difference_y(sigma_xy, x, y, z)
+        + finite_difference_z(sigma_xz, x, y, z)
+    )
+
+    second_comp = (
+        finite_difference_x(sigma_yx, x, y, z)
+        + finite_difference_y(sigma_yy, x, y, z)
+        + finite_difference_z(sigma_yz, x, y, z)
+    )
+
+    third_comp = (
+        finite_difference_x(sigma_zx, x, y, z)
+        + finite_difference_y(sigma_zy, x, y, z)
+        + finite_difference_z(sigma_zz, x, y, z)
+    )
+
+    first_vals.append(first_comp)
+    second_vals.append(second_comp)
+    third_vals.append(third_comp)
+
+plt.figure()
+plt.plot(lambda_vals, first_vals, label="div sigma (x)")
+plt.plot(lambda_vals, second_vals, label="div sigma (y)")
+plt.plot(lambda_vals, third_vals, label="div sigma (z)")
+
+plt.xlabel("lambda")
+plt.ylabel("divergence component")
+plt.legend()
+# plt.xscale("log")   
+# plt.yscale("log")   
+plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# number of points along the ellipse
+n_theta = 200
+theta = np.linspace(0, 2*np.pi, n_theta)
+
+# ellipsoid semi-axes
+a = 1.0
+b = 1.0
+c = 1.0
+mu = 1.0
+
+# store shear magnitudes
+shear_surface = np.zeros_like(theta)
+
+for i, th in enumerate(theta):
+    # points on y=0 ellipse slice
+    z = a * np.cos(th)
+    y = 0.0
+    x = c * np.sin(th)
+    lam = 0.0  
+
+    gradient = np.array([
+        [du_dx(x,y,z,lam), du_dy(x,y,z,lam), du_dz(x,y,z,lam)],
+        [dv_dx(x,y,z,lam), dv_dy(x,y,z,lam), dv_dz(x,y,z,lam)],
+        [dw_dx(x,y,z,lam), dw_dy(x,y,z,lam), dw_dz(x,y,z,lam)]
+    ])
+
+    # Cauchy stress
+    sigma = mu * (gradient + gradient.T)
+
+    # outward normal
+    P0 = 1/np.sqrt((x*x)/(a**4) + (y*y)/(b**4) + (z*z)/(c**4))
+    normal = np.array([P0*x/(a*a), P0*y/(b*b), P0*z/(c*c)])
+
+    # tangential traction
+    traction = sigma @ normal
+    tangential = traction - np.dot(traction, normal)*normal
+    shear_surface[i] = np.linalg.norm(tangential)
+
+# compute arc length along ellipse
+dx_dtheta = a * -np.sin(theta)
+dz_dtheta = c * np.cos(theta)
+ds_dtheta = np.sqrt(dx_dtheta**2 + dz_dtheta**2)
+s = np.zeros_like(theta)
+s[1:] = np.cumsum(0.5 * (ds_dtheta[1:] + ds_dtheta[:-1]) * np.diff(theta))
+
+# plot
+plt.figure(figsize=(7,4))
+plt.plot(s, shear_surface, lw=2)
+plt.xlabel("Arc length along x-z ellipse slice")
+plt.ylabel("Tangential traction magnitude")
+plt.title("Tangential traction along particle surface (y=0)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 
 
 
