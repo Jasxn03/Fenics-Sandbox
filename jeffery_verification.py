@@ -448,3 +448,58 @@ def finite_difference_z(f,x,y,z):
     plus = f(x,y,z+dx)
     minus = f(x, y,z-dx)
     return (plus - minus)/(2*dx)
+
+def finite_difference_xx(f,x,y,z):
+    dx = 1e-6
+    plus = f(x+dx, y, z)
+    minus = f(x-dx, y, z)
+    center = f(x,y,z)
+    return (plus-2*center + minus)/(dx**2)
+
+def finite_difference_yy(f,x,y,z):
+    dx = 1e-6
+    plus = f(x, y+dx, z)
+    minus = f(x, y-dx, z)
+    center = f(x,y,z)
+    return (plus-2*center + minus)/(dx**2)
+
+def finite_difference_zz(f,x,y,z):
+    dx = 1e-6
+    plus = f(x, y, z+dx)
+    minus = f(x, y, z-dx)
+    center = f(x,y,z)
+    return (plus-2*center + minus)/(dx**2)
+
+def finite_difference_xy(f,x,y,z):
+    dx = 1e-6
+    plus_plus = f(x+dx, y+dx, z)
+    plus_minus = f(x+dx, y-dx, z)
+    minus_plus = f(x-dx, y+dx, z)
+    minus_minus = f(x-dx, y-dx, z)
+    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+
+def finite_difference_xz(f,x,y,z):
+    dx = 1e-6
+    plus_plus = f(x+dx, y, z+dx)
+    plus_minus = f(x+dx, y, z-dx)
+    minus_plus = f(x-dx, y, z+dx)
+    minus_minus = f(x-dx, y, z-dx)
+    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+
+def finite_difference_yz(f,x,y,z):
+    dx = 1e-6
+    plus_plus = f(x, y+dx, z+dx)
+    plus_minus = f(x, y+dx, z-dx)
+    minus_plus = f(x, y-dx, z+dx)
+    minus_minus = f(x, y-dx, z-dx)
+    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+
+# need to write def flow field to extract u(x,y,z,lam)
+# sigma_xx = -pI + 2u_x, thus, sigma_xx_x = -pI_x + 2u_xx, want to estimate this value for varying lambda (with the aim of close to zero)
+# input x y z, obtain lambda, print lambda, input x y z lam into fd_xx and this gives sigma_xx_x
+# repeat for sigma_xy_y, sigma_xz_z etc etc, total should be zero
+
+# also do fd_x for u and plot for values of x y z (input x y z, find lambda, input x y z lam into fd_x) and compare with my analytical sol.
+# repeat for other components
+
+# if failing with lambda close to 0, try evaluating integrals
