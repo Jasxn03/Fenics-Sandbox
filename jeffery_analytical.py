@@ -192,7 +192,7 @@ def flow_field(x,y,z, lam):
     v =( x*(h_bold + xi + gamma_prime(lam)*T + 2*beta(lam)*H - 2*alpha(lam)*H) 
             + y*(b_bold - alpha_prime(lam)*U - gamma_prime(lam)*W - 2*(alpha(lam) + beta(lam) + gamma(lam))*B) 
             + z*(f_bold + xii + alpha_prime(lam)*R - 2*gamma(lam) * F + 2*beta(lam) * F)
-            - (2*y*P2(x,y,z,lam))/(b*b * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
+            - (2*y*P2(x,y,z,lam))/((b*b+lam) * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
                                             + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
                                             + (T + 2*(a*a+lam)*H + 2*(b*b+lam)*H) * x*y/((a*a + lam)*(b*b+lam))
                                             + (U- 2*(b*b+lam)*B + 2*(c*c+lam)*C) * z*z/((c*c+lam)*(c*c+lam))
@@ -203,7 +203,7 @@ def flow_field(x,y,z, lam):
     w =( x*(g_bold - eta + beta_prime(lam)*S - 2*alpha(lam)*G + 2*gamma(lam) * G) 
             + y*(f_bold + xii + alpha_prime(lam)*R + 2*gamma(lam)*F - 2*beta(lam)*F) 
             + z*(c_bold + beta_prime(lam)*V - alpha_prime(lam)*U - 2*(alpha(lam) + beta(lam) + gamma(lam))*C)
-            - (2*z*P2(x,y,z,lam))/(c*c * Delta(lam)) * ((R + 2*(b*b + lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
+            - (2*z*P2(x,y,z,lam))/((c*c+lam) * Delta(lam)) * ((R + 2*(b*b + lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
                                             + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
                                             + (T + 2*(a*a + lam)*H + 2*(b*b+lam)*H) * x*y/((a*a+lam)*(b*b+lam))
                                             + (V - 2*(c*c+lam)*C + 2*(a*a+lam)*A) * x*x/((a*a+lam)*(a*a+lam))
@@ -276,7 +276,7 @@ def dv_dx(x,y,z,lam):
 def dv_dy(x,y,z,lam):
     v_y = (x*T*dgammaprime_dy(x,y,z,lam) + 2*x*H*(dbeta_dy(x,y,z,lam) - dalpha_dy(x,y,z,lam)) + b_bold + alpha_prime(lam)*U - gamma_prime(lam)*W - 2*(alpha(lam) + beta(lam) + gamma(lam))*B + y*U*dalphaprime_dy(x,y,z,lam) - y*W*dgammaprime_dy(x,y,z,lam)
         -2*y*B*(dalpha_dy(x,y,z,lam) + dbeta_dy(x,y,z,lam) + dgamma_dy(x,y,z,lam)) + z*R*dalphaprime_dy(x,y,z,lam) - 2*z*F*(dgamma_dy(x,y,z,lam) - dbeta_dy(x,y,z,lam))
-        +((-2*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (-4*y*P(x,y,z,lam)*dP_dx(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (2*y*P2(x,y,z,lam)*dl_dy(x,y,z,lam))/((b**2+lam)**2*Delta(lam)) - (2*y*P2(x,y,z,lam) * dDeltaminus_dy(x,y,z,lam))/(b**2 + lam)) 
+        +((-2*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (-4*y*P(x,y,z,lam)*dP_dy(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (2*y*P2(x,y,z,lam)*dl_dy(x,y,z,lam))/((b**2+lam)**2*Delta(lam)) - (2*y*P2(x,y,z,lam) * dDeltaminus_dy(x,y,z,lam))/(b**2 + lam)) 
         *((4*lam*F*y*z)/((b*b+lam)*(c*c+lam)) + (4*lam*G*z*x)/((c*c+lam)*(a*a+lam)) + (4*lam*H*x*y)/((a*a+lam)*(b*b+lam)) + ((2*lam*C-2*lam*B)*z*z)/((c*c+lam)*(c*c+lam))
         + ((2*lam*A - 2*lam*B)*x*x)/((a*a+lam)*(a*a+lam)))
         - (2*y*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam))
@@ -456,7 +456,7 @@ print('xz diff', sigma_xz(1,1,1)-sigma_zx(1,1,1))
 print('yz diff', sigma_yz(1,1,1)-sigma_zy(1,1,1))
 
 
-eps = 100
+eps = 10-(1/np.sqrt(3))
 
 first_comp = finite_difference_x(sigma_xx, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_y(sigma_xy, 1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps) + finite_difference_z(sigma_xz,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps)
 print('first comp', first_comp)

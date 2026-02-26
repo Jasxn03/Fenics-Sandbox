@@ -184,15 +184,15 @@ def flow_field(x,y,z, lam):
             - (2*x*P2(x,y,z,lam))/((a*a+lam) * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
                                             + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
                                             + (T + 2*(a*a + lam)*H + 2*(b*b + lam)*H) * x*y/((a*a+lam)*(b*b+lam))
-                                            + (W- 2*(a*a+lam)*A + 2*(b*b+lam)*B) * y*y/((b*b+lam)*(b*b+lam))
+                                            + (W - 2*(a*a + lam)*A + 2*(b*b + lam)*B) * y*y/((b*b+lam)*(b*b+lam))
                                             - (V - 2*(c*c+lam)*C + 2*(a*a+lam)*A) * z*z/((c*c+lam)*(c*c+lam))
 
             )
             )
     v =( x*(h_bold + xi + gamma_prime(lam)*T + 2*beta(lam)*H - 2*alpha(lam)*H) 
             + y*(b_bold - alpha_prime(lam)*U - gamma_prime(lam)*W - 2*(alpha(lam) + beta(lam) + gamma(lam))*B) 
-            + z*(f_bold + xii + alpha_prime(lam)*R - 2*gamma(lam) * F + 2*beta(lam) * F)
-            - (2*y*P2(x,y,z,lam))/(b*b * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
+            + z*(f_bold - xii + alpha_prime(lam)*R - 2*gamma(lam) * F + 2*beta(lam) * F)
+            - (2*y*P2(x,y,z,lam))/((b*b+lam) * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
                                             + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
                                             + (T + 2*(a*a+lam)*H + 2*(b*b+lam)*H) * x*y/((a*a + lam)*(b*b+lam))
                                             + (U- 2*(b*b+lam)*B + 2*(c*c+lam)*C) * z*z/((c*c+lam)*(c*c+lam))
@@ -203,7 +203,7 @@ def flow_field(x,y,z, lam):
     w =( x*(g_bold - eta + beta_prime(lam)*S - 2*alpha(lam)*G + 2*gamma(lam) * G) 
             + y*(f_bold + xii + alpha_prime(lam)*R + 2*gamma(lam)*F - 2*beta(lam)*F) 
             + z*(c_bold + beta_prime(lam)*V - alpha_prime(lam)*U - 2*(alpha(lam) + beta(lam) + gamma(lam))*C)
-            - (2*z*P2(x,y,z,lam))/(c*c * Delta(lam)) * ((R + 2*(b*b + lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
+            - (2*z*P2(x,y,z,lam))/((c*c+lam) * Delta(lam)) * ((R + 2*(b*b + lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
                                             + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
                                             + (T + 2*(a*a + lam)*H + 2*(b*b+lam)*H) * x*y/((a*a+lam)*(b*b+lam))
                                             + (V - 2*(c*c+lam)*C + 2*(a*a+lam)*A) * x*x/((a*a+lam)*(a*a+lam))
@@ -276,7 +276,7 @@ def dv_dx(x,y,z,lam):
 def dv_dy(x,y,z,lam):
     v_y = (x*T*dgammaprime_dy(x,y,z,lam) + 2*x*H*(dbeta_dy(x,y,z,lam) - dalpha_dy(x,y,z,lam)) + b_bold + alpha_prime(lam)*U - gamma_prime(lam)*W - 2*(alpha(lam) + beta(lam) + gamma(lam))*B + y*U*dalphaprime_dy(x,y,z,lam) - y*W*dgammaprime_dy(x,y,z,lam)
         -2*y*B*(dalpha_dy(x,y,z,lam) + dbeta_dy(x,y,z,lam) + dgamma_dy(x,y,z,lam)) + z*R*dalphaprime_dy(x,y,z,lam) - 2*z*F*(dgamma_dy(x,y,z,lam) - dbeta_dy(x,y,z,lam))
-        +((-2*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (-4*y*P(x,y,z,lam)*dP_dx(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (2*y*P2(x,y,z,lam)*dl_dy(x,y,z,lam))/((b**2+lam)**2*Delta(lam)) - (2*y*P2(x,y,z,lam) * dDeltaminus_dy(x,y,z,lam))/(b**2 + lam)) 
+        +((-2*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (-4*y*P(x,y,z,lam)*dP_dy(x,y,z,lam))/((b**2 + lam)*Delta(lam)) + (2*y*P2(x,y,z,lam)*dl_dy(x,y,z,lam))/((b**2+lam)**2*Delta(lam)) - (2*y*P2(x,y,z,lam) * dDeltaminus_dy(x,y,z,lam))/(b**2 + lam)) 
         *((4*lam*F*y*z)/((b*b+lam)*(c*c+lam)) + (4*lam*G*z*x)/((c*c+lam)*(a*a+lam)) + (4*lam*H*x*y)/((a*a+lam)*(b*b+lam)) + ((2*lam*C-2*lam*B)*z*z)/((c*c+lam)*(c*c+lam))
         + ((2*lam*A - 2*lam*B)*x*x)/((a*a+lam)*(a*a+lam)))
         - (2*y*P2(x,y,z,lam))/((b**2 + lam)*Delta(lam))
@@ -430,48 +430,51 @@ def sigma_zz(x,y,z):
 
 def finite_difference_x(f,x,y,z):
     dx = 1e-6
-    dx = 1e-12 * (1 + abs(x) + abs(y) + abs(z))
+    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))  
+    #dx = 1e-4
     plus = f(x+dx,y,z)
     minus = f(x-dx, y,z)
     return (plus - minus)/(2*dx)
 
 def finite_difference_y(f,x,y,z):
     dx = 1e-6
-    dx = 1e-12* (1 + abs(x) + abs(y) + abs(z))
+    dx = 1e-4* (1 + abs(x) + abs(y) + abs(z))
+    #dx = 1e-4
     plus = f(x,y+dx,z)
     minus = f(x,y-dx,z)
     return (plus - minus)/(2*dx)
 
 def finite_difference_z(f,x,y,z):
     dx = 1e-6
-    dx = 1e-12 * (1 + abs(x) + abs(y) + abs(z))
+    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
+    #dx = 1e-4
     plus = f(x,y,z+dx)
     minus = f(x, y,z-dx)
     return (plus - minus)/(2*dx)
 
 def finite_difference_xx(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus = f(x+dx, y, z)
     minus = f(x-dx, y, z)
     center = f(x,y,z)
     return (plus-2*center + minus)/(dx**2)
 
 def finite_difference_yy(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus = f(x, y+dx, z)
     minus = f(x, y-dx, z)
     center = f(x,y,z)
     return (plus-2*center + minus)/(dx**2)
 
 def finite_difference_zz(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus = f(x, y, z+dx)
     minus = f(x, y, z-dx)
     center = f(x,y,z)
     return (plus-2*center + minus)/(dx**2)
 
 def finite_difference_xy(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus_plus = f(x+dx, y+dx, z)
     plus_minus = f(x+dx, y-dx, z)
     minus_plus = f(x-dx, y+dx, z)
@@ -479,7 +482,7 @@ def finite_difference_xy(f,x,y,z):
     return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
 
 def finite_difference_xz(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus_plus = f(x+dx, y, z+dx)
     plus_minus = f(x+dx, y, z-dx)
     minus_plus = f(x-dx, y, z+dx)
@@ -487,7 +490,7 @@ def finite_difference_xz(f,x,y,z):
     return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
 
 def finite_difference_yz(f,x,y,z):
-    dx = 1e-6
+    dx = 1e-4
     plus_plus = f(x, y+dx, z+dx)
     plus_minus = f(x, y+dx, z-dx)
     minus_plus = f(x, y-dx, z+dx)
@@ -503,3 +506,120 @@ def finite_difference_yz(f,x,y,z):
 # repeat for other components
 
 # if failing with lambda close to 0, try evaluating integrals
+
+
+# this is now comparison part
+
+def u_func(x,y,z):
+    lam_val = compute_lambda(x,y,z)
+    u, _, _ = flow_field(x,y,z,lam_val)
+    return u
+
+def v_func(x,y,z):
+    lam_val = compute_lambda(x,y,z)
+    _, v, _ = flow_field(x,y,z,lam_val)
+    return v    
+
+def w_func(x,y,z):
+    lam_val = compute_lambda(x,y,z)
+    _, _, w = flow_field(x,y,z,lam_val)
+    return w
+
+def pressure_func(x,y,z):
+    lam_val = compute_lambda(x,y,z)
+    return pressure(x,y,z,lam_val)
+
+def div_sigma_x_func(x,y,z):
+    p = pressure_func(x,y,z)
+    u = u_func(x,y,z)
+    v = v_func(x,y,z)
+    w = w_func(x,y,z)
+    comp_one = -finite_difference_x(pressure_func,x,y,z) + 2*finite_difference_xx(u_func,x,y,z)
+    comp_two = finite_difference_yy(u_func,x,y,z) + finite_difference_xy(v_func,x,y,z)
+    comp_three = finite_difference_zz(u_func,x,y,z) + finite_difference_xz(w_func,x,y,z)
+    return comp_one + comp_two + comp_three
+
+def div_sigma_y_func(x,y,z):
+    p = pressure_func(x,y,z)
+    u = u_func(x,y,z)
+    v = v_func(x,y,z)
+    w = w_func(x,y,z)
+    comp_one = finite_difference_xy(u_func,x,y,z) + finite_difference_xx(v_func,x,y,z)
+    comp_two = -finite_difference_y(pressure_func,x,y,z) + 2*finite_difference_yy(v_func,x,y,z)
+    comp_three = finite_difference_zz(v_func,x,y,z) + finite_difference_yz(w_func,x,y,z)
+    return comp_one + comp_two + comp_three
+
+def div_sigma_z_func(x,y,z):
+    p = pressure_func(x,y,z)
+    u = u_func(x,y,z)
+    v = v_func(x,y,z)
+    w = w_func(x,y,z)
+    comp_one = finite_difference_xz(u_func,x,y,z) + finite_difference_xx(w_func,x,y,z)
+    comp_two = finite_difference_yz(v_func,x,y,z) + finite_difference_yy(w_func,x,y,z)
+    comp_three = -finite_difference_z(pressure_func,x,y,z) + 2*finite_difference_zz(w_func,x,y,z)
+    return comp_one + comp_two + comp_three
+
+eps = 1e-4 # cannot be smaller than dx otherwise i go inside the particle (i think) and the finite difference approximation breaks
+
+print("div sigma x:", div_sigma_x_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
+print("div sigma y:", div_sigma_y_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
+print("div sigma z:", div_sigma_z_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
+
+
+# this validation above of just computing div sigma from u v w is okay, but cannot use too small dx, 1e-4 is good
+
+
+# now want to validate finite diff grad u vs my grad u, component wise
+def grad_u_x(x,y,z):
+    return finite_difference_x(u_func,x,y,z)
+
+def grad_u_y(x,y,z):
+    return finite_difference_y(u_func,x,y,z)
+
+def grad_u_z(x,y,z):
+    return finite_difference_z(u_func,x,y,z)
+
+def grad_v_x(x,y,z):
+    return finite_difference_x(v_func,x,y,z)
+
+def grad_v_y(x,y,z):
+    return finite_difference_y(v_func,x,y,z)
+
+def grad_v_z(x,y,z):
+    return finite_difference_z(v_func,x,y,z)
+
+def grad_w_x(x,y,z):
+    return finite_difference_x(w_func,x,y,z)
+
+def grad_w_y(x,y,z):
+    return finite_difference_y(w_func,x,y,z)
+
+def grad_w_z(x,y,z):
+    return finite_difference_z(w_func,x,y,z)
+
+coord = (1,1,1)
+
+print("u_x diff", grad_u_x(*coord) - du_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("u_y diff", grad_u_y(*coord) - du_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("u_z diff", grad_u_z(*coord) - du_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("v_x diff", grad_v_x(*coord) - dv_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("v_y diff", grad_v_y(*coord) - dv_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("v_z diff", grad_v_z(*coord) - dv_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("w_x diff", grad_w_x(*coord) - dw_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("w_y diff", grad_w_y(*coord) - dw_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("w_z diff", grad_w_z(*coord) - dw_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+
+print("u_x via grad u", grad_u_x(*coord))
+print("u_x via du_dx", du_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+
+print("sigma_xx diff", (-pressure_func(*coord) + 2*grad_u_x(*coord)) - sigma_xx(coord[0],coord[1],coord[2]))
+print("sigma_xx via sigma_xx", sigma_xx(coord[0],coord[1],coord[2]))
+print("sigma_xx via pressure and grad u", -pressure_func(*coord) + 2*grad_u_x(*coord))
+print("pressure diff", pressure_func(*coord) - pressure(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
+print("pressure via pressure func", pressure_func(*coord))
+
+# not sure why this is all different but by the same amount? maybe diff wrong? 
+# since u_x diff and du_dx diff is -106 and sigma_xx diff is -213, the pressure also has to be off then?
+# but n pressure diff is 0
+# thus problem is definitely between grad u and du_dx
+# either fd approx (checked and seemed okay...), analytically diff wrong (done multiple times, check again), typo in original eqn?
