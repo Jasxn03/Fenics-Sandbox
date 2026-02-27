@@ -133,11 +133,11 @@ def P(x,y,z,lam):
     return F_coeff(x,y,z,lam)**(-1/2)
 
 def dP_dx(x,y,z,lam):
-    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*x)/(a**2 + lam) - (x**2 * dl_dx(x,y,z,lam))/(a**2 + lam)**2 - (y**2 * dl_dx(x,y,z,lam))/(b**2 + lam)**2 - (z**2 * dl_dx(x,y,z,lam))/(c**2 + lam)**2)
+    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*x)/(a**2 + lam)**2 - (2*x**2 * dl_dx(x,y,z,lam))/(a**2 + lam)**3 - (2*y**2 * dl_dx(x,y,z,lam))/(b**2 + lam)**3 - (2*z**2 * dl_dx(x,y,z,lam))/(c**2 + lam)**3)
 def dP_dy(x,y,z,lam):
-    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*y)/(b**2 + lam) - (x**2 * dl_dy(x,y,z,lam))/(a**2 + lam)**2 - (y**2 * dl_dy(x,y,z,lam))/(b**2 + lam)**2 - (z**2 * dl_dy(x,y,z,lam))/(c**2 + lam)**2)
+    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*y)/(b**2 + lam)**2 - (2*x**2 * dl_dy(x,y,z,lam))/(a**2 + lam)**3 - (2*y**2 * dl_dy(x,y,z,lam))/(b**2 + lam)**3 - (2*z**2 * dl_dy(x,y,z,lam))/(c**2 + lam)**3)
 def dP_dz(x,y,z,lam):
-    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*z)/(c**2 + lam) - (x**2 * dl_dz(x,y,z,lam))/(a**2 + lam)**2 - (y**2 * dl_dz(x,y,z,lam))/(b**2 + lam)**2 - (z**2 * dl_dz(x,y,z,lam))/(c**2 + lam)**2)
+    return -1/2 * (F_coeff(x,y,z,lam)**(-3/2)) * ((2*z)/(c**2 + lam)**2 - (2*x**2 * dl_dz(x,y,z,lam))/(a**2 + lam)**3 - (2*y**2 * dl_dz(x,y,z,lam))/(b**2 + lam)**3 - (2*z**2 * dl_dz(x,y,z,lam))/(c**2 + lam)**3)
 def dDeltaminus_dx(x,y,z,lam):
     return -1/2 * ((a**2 + lam)*(b**2 + lam)*(c**2 + lam))**(-3/2) * ((dl_dx(x,y,z,lam)*(b**2 + lam)*(c**2 + lam)) + ((a**2 + lam)*dl_dx(x,y,z,lam)*(c**2 + lam)) + ((a**2 + lam)*(b**2 + lam)*dl_dx(x,y,z,lam)))
 def dDeltaminus_dy(x,y,z,lam):

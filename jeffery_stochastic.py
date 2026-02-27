@@ -1,3 +1,74 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm 
+
+# i have stochastic model for grad u. what can i do with it?
+# can plot time series for each component
+# once i have time series for that component, i have time series for stress
+
+#region Stochastic Model RK2 Implementation
+
+tau = 0.05
+T = 1
+dt = 0.001
+
+noise_amp = 1.0
+steps = 20000
+
+def drift(A, tau, T):
+    expA = expm(tau*A)
+    C = expA @ expA.T
+    C_inv = np.linalg.inv(C)
+    trA2 = np.trace(A @ A)
+    trCinv = np.trace(C_inv)
+    drift = -A@A + (trA2/trCinv)*C_inv -(trCinv/(3*T))*A
+    return drift
+
+def noise(noise_amp, dt):
+    dW = np.random.randn(3,3)
+    dW -= np.trace(dW)/3 * np.eye(3)
+    return noise_amp *np.sqrt(dt)*dW
+
+def rk2_sde(A, dt, tau, T, noise_amp):
+    dW = noise(noise_amp, dt)
+    fA = drift(A, tau, T)
+    A_1 = A + fA*dt + dW
+    fA_1 = drift(A_1, tau, T)
+    A_next = A + 1/2 * (fA + fA_1) * dt + dW
+    A_next -= np.trace(A_next)/3 * np.eye(3)
+    return A_next
+
+A_history = np.zeros((steps, 3, 3))
+
+A = np.random.randn(3,3) * 0.1
+A -= np.trace(A)/3 * np.eye(3)
+
+for i in range(steps):
+    A = rk2_sde(A, dt, tau, T, noise_amp)
+    A_history[i] = A
+
+t = np.arange(steps) * dt
+
+plt.plot(t, A_history[:,0,0], label="A11")
+plt.plot(t, A_history[:,1,1], label="A22")
+plt.plot(t, A_history[:,2,2], label="A33")
+plt.legend()
+plt.xlabel("time")
+plt.ylabel("A_ij")
+plt.show()
+
+
+plt.plot(t, A_history[:,0,1], label="A12")
+plt.plot(t, A_history[:,0,2], label="A13")
+plt.plot(t, A_history[:,1,2], label="A23")
+plt.legend()
+plt.xlabel("time")
+plt.ylabel("A_ij")
+plt.show()
+
+#endregion
+
+#region jeffery stuff for stress
 import sympy as sp
 from sympy.utilities.lambdify import lambdify
 import numpy as np
@@ -12,7 +83,6 @@ a = 1.0
 b = 1.0
 c = 1.0
 
-#region Coefficient definitions
 
 # geometrical integrals
 def Delta(lam):
@@ -26,7 +96,7 @@ def alpha(lam):
     return (2/3) * (a**2 + lam)**(-3/2)
 
 def beta(lam):
-    f = lambda s: 1.0 / ((b*b + s)*Delta(s))
+    f = lambda s: 1.0 / ((b*b + s)*Delta(s))            # i can only simplify if it is a sphere
     #return quad(f, lam, np.inf, limit=200)[0]
     return (2/3) * (a**2 + lam)**(-3/2)
 
@@ -180,47 +250,6 @@ T = -h_bold/gamma_prime0
 U = 2*b*b*B - 2*c*c*C
 V = 2*c*c*C - 2*a*a*A
 W = 2*a*a*A - 2*b*b*B
-
-#endregion
-
-#region Flow field function
-
-# flow field 
-def flow_field(x,y,z, lam):
-    u =( x*(a_bold + gamma_prime(lam)*W - beta_prime(lam)*V - 2*(alpha(lam)+beta(lam)+gamma(lam))*A) 
-            + y*(h_bold - xi + gamma_prime(lam)*T - 2*beta(lam)*H + 2*alpha(lam)*H) 
-            + z*(g_bold + eta + beta_prime(lam)*S - 2*gamma(lam) * G + 2*alpha(lam) * G)
-            - (2*x*P2(x,y,z,lam))/((a*a+lam) * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
-                                            + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
-                                            + (T + 2*(a*a + lam)*H + 2*(b*b + lam)*H) * x*y/((a*a+lam)*(b*b+lam))
-                                            + (W - 2*(a*a + lam)*A + 2*(b*b + lam)*B) * y*y/((b*b+lam)*(b*b+lam))
-                                            - (V - 2*(c*c+lam)*C + 2*(a*a+lam)*A) * z*z/((c*c+lam)*(c*c+lam))
-
-            )
-            )
-    v =( x*(h_bold + xi + gamma_prime(lam)*T + 2*beta(lam)*H - 2*alpha(lam)*H) 
-            + y*(b_bold - alpha_prime(lam)*U - gamma_prime(lam)*W - 2*(alpha(lam) + beta(lam) + gamma(lam))*B) 
-            + z*(f_bold - xii + alpha_prime(lam)*R - 2*gamma(lam) * F + 2*beta(lam) * F)
-            - (2*y*P2(x,y,z,lam))/((b*b+lam) * Delta(lam)) * ((R + 2*(b*b+lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
-                                            + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
-                                            + (T + 2*(a*a+lam)*H + 2*(b*b+lam)*H) * x*y/((a*a + lam)*(b*b+lam))
-                                            + (U- 2*(b*b+lam)*B + 2*(c*c+lam)*C) * z*z/((c*c+lam)*(c*c+lam))
-                                            - (W - 2*(a*a+lam)*A + 2*(b*b+lam)*B) * x*x/((a*a+lam)*(a*a+lam))
-
-            )
-            )
-    w =( x*(g_bold - eta + beta_prime(lam)*S - 2*alpha(lam)*G + 2*gamma(lam) * G) 
-            + y*(f_bold + xii + alpha_prime(lam)*R + 2*gamma(lam)*F - 2*beta(lam)*F) 
-            + z*(c_bold + beta_prime(lam)*V - alpha_prime(lam)*U - 2*(alpha(lam) + beta(lam) + gamma(lam))*C)
-            - (2*z*P2(x,y,z,lam))/((c*c+lam) * Delta(lam)) * ((R + 2*(b*b + lam)*F + 2*(c*c+lam)*F) * y*z/((b*b+lam)*(c*c+lam))
-                                            + (S + 2*(c*c+lam)*G + 2*(a*a+lam)*G) * z*x/((c*c+lam)*(a*a+lam))
-                                            + (T + 2*(a*a + lam)*H + 2*(b*b+lam)*H) * x*y/((a*a+lam)*(b*b+lam))
-                                            + (V - 2*(c*c+lam)*C + 2*(a*a+lam)*A) * x*x/((a*a+lam)*(a*a+lam))
-                                            - (U - 2*(b*b+lam)*B + 2*(c*c+lam)*C) * y*y/((b*b+lam)*(b*b+lam))
-
-            )
-            )
-    return u ,v ,w
 
 def du_dx(x,y,z,lam):
     u_x = (a_bold + gamma_prime(lam)*W - beta_prime(lam)*V - 2*(alpha(lam)+beta(lam)+gamma(lam))*A + x*W*dgammaprime_dx(x,y,z,lam) -x*V*dbetaprime_dx(x,y,z,lam) - 2*A*x*(dalpha_dx(x,y,z,lam) + dbeta_dx(x,y,z,lam) + dgamma_dx(x,y,z,lam)) 
@@ -438,300 +467,56 @@ def sigma_zz(x,y,z):
     p = pressure(x,y,z,lam)
     return -p + 2*w_z
 
-def finite_difference_x(f,x,y,z):
-    dx = 1e-6
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))  
-    #dx = 1e-4
-    plus = f(x+dx,y,z)
-    minus = f(x-dx, y,z)
-    return (plus - minus)/(2*dx)
+#endregion
 
-def finite_difference_y(f,x,y,z):
-    dx = 1e-6
-    dx = 1e-4* (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus = f(x,y+dx,z)
-    minus = f(x,y-dx,z)
-    return (plus - minus)/(2*dx)
+def sigma_analytical(x,y,z):
+    return np.array([[sigma_xx(x,y,z), sigma_xy(x,y,z), sigma_xz(x,y,z)], [sigma_yx(x,y,z), sigma_yy(x,y,z), sigma_yz(x,y,z)], [sigma_zx(x,y,z), sigma_zy(x,y,z), sigma_zz(x,y,z)]])
 
-def finite_difference_z(f,x,y,z):
-    dx = 1e-6
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus = f(x,y,z+dx)
-    minus = f(x, y,z-dx)
-    return (plus - minus)/(2*dx)
+def sigma_analytical(x, y, z):
+    return np.array([[float(sigma_xx(x,y,z)), float(sigma_xy(x,y,z)), float(sigma_xz(x,y,z))],
+                     [float(sigma_yx(x,y,z)), float(sigma_yy(x,y,z)), float(sigma_yz(x,y,z))],
+                     [float(sigma_zx(x,y,z)), float(sigma_zy(x,y,z)), float(sigma_zz(x,y,z))]])
+x0 = y0 = z0 = 1
 
-def finite_difference_xx(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus = f(x+dx, y, z)
-    minus = f(x-dx, y, z)
-    center = f(x,y,z)
-    return (plus-2*center + minus)/(dx**2)
+pos = np.array([x0, y0, z0])
+pos_history = np.zeros((steps,3))
 
-def finite_difference_yy(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus = f(x, y+dx, z)
-    minus = f(x, y-dx, z)
-    center = f(x,y,z)
-    return (plus-2*center + minus)/(dx**2)
+sigma_history = np.zeros((steps,3,3))
 
-def finite_difference_zz(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus = f(x, y, z+dx)
-    minus = f(x, y, z-dx)
-    center = f(x,y,z)
-    return (plus-2*center + minus)/(dx**2)
+A = np.random.randn(3,3) * 0.1
+A -= np.trace(A)/3 * np.eye(3)
 
-def finite_difference_xy(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus_plus = f(x+dx, y+dx, z)
-    plus_minus = f(x+dx, y-dx, z)
-    minus_plus = f(x-dx, y+dx, z)
-    minus_minus = f(x-dx, y-dx, z)
-    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+result = sigma_analytical(*pos)
+print(result.shape)
 
-def finite_difference_xz(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus_plus = f(x+dx, y, z+dx)
-    plus_minus = f(x+dx, y, z-dx)
-    minus_plus = f(x-dx, y, z+dx)
-    minus_minus = f(x-dx, y, z-dx)
-    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+x, y, z = pos
+arr = np.array([[sigma_xx(x,y,z), sigma_xy(x,y,z), sigma_xz(x,y,z)],
+                [sigma_yx(x,y,z), sigma_yy(x,y,z), sigma_yz(x,y,z)],
+                [sigma_zx(x,y,z), sigma_zy(x,y,z), sigma_zz(x,y,z)]])
+print(arr.shape)
 
-def finite_difference_yz(f,x,y,z):
-    dx = 1e-4 * (1 + abs(x) + abs(y) + abs(z))
-    #dx = 1e-4
-    plus_plus = f(x, y+dx, z+dx)
-    plus_minus = f(x, y+dx, z-dx)
-    minus_plus = f(x, y-dx, z+dx)
-    minus_minus = f(x, y-dx, z-dx)
-    return (plus_plus - plus_minus - minus_plus + minus_minus)/(4*dx**2)
+for i in range(steps):
+    A = rk2_sde(A, dt, tau, T, noise_amp)
+    pos = pos + dt * (A @ pos)
+    pos_history[i] = pos
+    print(f"step {i}: pos shape = {pos.shape}, pos dtype = {pos.dtype}")
+    sigma_history[i] = sigma_analytical(*pos)
 
-# need to write def flow field to extract u(x,y,z,lam)
-# sigma_xx = -pI + 2u_x, thus, sigma_xx_x = -pI_x + 2u_xx, want to estimate this value for varying lambda (with the aim of close to zero)
-# input x y z, obtain lambda, print lambda, input x y z lam into fd_xx and this gives sigma_xx_x
-# repeat for sigma_xy_y, sigma_xz_z etc etc, total should be zero
+t = np.arange(steps) * dt
 
-# also do fd_x for u and plot for values of x y z (input x y z, find lambda, input x y z lam into fd_x) and compare with my analytical sol.
-# repeat for other components
-
-# if failing with lambda close to 0, try evaluating integrals
-
-
-# this is now comparison part
-
-def u_func(x,y,z):
-    lam_val = compute_lambda(x,y,z)
-    u, _, _ = flow_field(x,y,z,lam_val)
-    return u
-
-def v_func(x,y,z):
-    lam_val = compute_lambda(x,y,z)
-    _, v, _ = flow_field(x,y,z,lam_val)
-    return v    
-
-def w_func(x,y,z):
-    lam_val = compute_lambda(x,y,z)
-    _, _, w = flow_field(x,y,z,lam_val)
-    return w
-
-def pressure_func(x,y,z):
-    lam_val = compute_lambda(x,y,z)
-    return pressure(x,y,z,lam_val)
-
-def div_sigma_x_func(x,y,z):
-    p = pressure_func(x,y,z)
-    u = u_func(x,y,z)
-    v = v_func(x,y,z)
-    w = w_func(x,y,z)
-    comp_one = -finite_difference_x(pressure_func,x,y,z) + 2*finite_difference_xx(u_func,x,y,z)
-    comp_two = finite_difference_yy(u_func,x,y,z) + finite_difference_xy(v_func,x,y,z)
-    comp_three = finite_difference_zz(u_func,x,y,z) + finite_difference_xz(w_func,x,y,z)
-    return comp_one + comp_two + comp_three
-
-def div_sigma_y_func(x,y,z):
-    p = pressure_func(x,y,z)
-    u = u_func(x,y,z)
-    v = v_func(x,y,z)
-    w = w_func(x,y,z)
-    comp_one = finite_difference_xy(u_func,x,y,z) + finite_difference_xx(v_func,x,y,z)
-    comp_two = -finite_difference_y(pressure_func,x,y,z) + 2*finite_difference_yy(v_func,x,y,z)
-    comp_three = finite_difference_zz(v_func,x,y,z) + finite_difference_yz(w_func,x,y,z)
-    return comp_one + comp_two + comp_three
-
-def div_sigma_z_func(x,y,z):
-    p = pressure_func(x,y,z)
-    u = u_func(x,y,z)
-    v = v_func(x,y,z)
-    w = w_func(x,y,z)
-    comp_one = finite_difference_xz(u_func,x,y,z) + finite_difference_xx(w_func,x,y,z)
-    comp_two = finite_difference_yz(v_func,x,y,z) + finite_difference_yy(w_func,x,y,z)
-    comp_three = -finite_difference_z(pressure_func,x,y,z) + 2*finite_difference_zz(w_func,x,y,z)
-    return comp_one + comp_two + comp_three
-
-eps = 1e-4 # cannot be smaller than dx otherwise i go inside the particle (i think) and the finite difference approximation breaks
-
-# print("div sigma x:", div_sigma_x_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
-# print("div sigma y:", div_sigma_y_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
-# print("div sigma z:", div_sigma_z_func(1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps))
-
-div_sigma_x_diff = []
-div_sigma_y_diff = []
-div_sigma_z_diff = [] 
-lambda_values = []
-
-coords = []
-eps_range = np.logspace(-3, 4, 100)
-for i in eps_range:
-    val = (1/np.sqrt(3)+i,1/np.sqrt(3)+i,1/np.sqrt(3)+i)
-    coords.append(val)
-
-for i in coords:
-    idk = compute_lambda(*i)
-    lambda_values.append(idk)
-
-    comp1 = finite_difference_x(sigma_xx, i[0], i[1], i[2]) + finite_difference_y(sigma_xy, i[0], i[1], i[2]) + finite_difference_z(sigma_xz, i[0], i[1], i[2])
-    comp2 = finite_difference_x(sigma_yx, i[0], i[1], i[2]) + finite_difference_y(sigma_yy, i[0], i[1], i[2]) + finite_difference_z(sigma_yz, i[0], i[1], i[2])
-    comp3 = finite_difference_x(sigma_zx, i[0], i[1], i[2]) + finite_difference_y(sigma_zy, i[0], i[1], i[2]) + finite_difference_z(sigma_zz, i[0], i[1], i[2])
-
-    comp4 = div_sigma_x_func(*i)
-    comp5 = div_sigma_y_func(*i)
-    comp6 = div_sigma_z_func(*i)
-
-    label1 = comp1 - comp4
-    label2 = comp2 - comp5 
-    label3 = comp3 - comp6
-
-    div_sigma_x_diff.append(label1)
-    div_sigma_y_diff.append(label2)
-    div_sigma_z_diff.append(label3)
-
-
-plt.plot(lambda_values, div_sigma_x_diff, label = "div_sigma_x diff")
-plt.plot(lambda_values, div_sigma_y_diff, label = "div_sigma_y diff")
-plt.plot(lambda_values, div_sigma_z_diff, label = "div_sigma_z diff")
-plt.xlabel("lambda")
-plt.ylabel("div sigma_i diff")
-plt.xscale("log")
-#plt.yscale("log")
+plt.plot(t, sigma_history[:,0,0], label="sigma_11")
+plt.plot(t, sigma_history[:,1,1], label="sigma_22")
+plt.plot(t, sigma_history[:,2,2], label="sigma_33")
 plt.legend()
+plt.xlabel("time")
+plt.ylabel("sigma_ij")
 plt.show()
 
-coords.clear()
-lambda_values.clear()
-
-
-
-
-
-# this validation above of just computing div sigma from u v w is okay, but cannot use too small dx, 1e-4 is good
-
-
-# now want to validate finite diff grad u vs my grad u, component wise
-def grad_u_x(x,y,z):
-    return finite_difference_x(u_func,x,y,z)
-
-def grad_u_y(x,y,z):
-    return finite_difference_y(u_func,x,y,z)
-
-def grad_u_z(x,y,z):
-    return finite_difference_z(u_func,x,y,z)
-
-def grad_v_x(x,y,z):
-    return finite_difference_x(v_func,x,y,z)
-
-def grad_v_y(x,y,z):
-    return finite_difference_y(v_func,x,y,z)
-
-def grad_v_z(x,y,z):
-    return finite_difference_z(v_func,x,y,z)
-
-def grad_w_x(x,y,z):
-    return finite_difference_x(w_func,x,y,z)
-
-def grad_w_y(x,y,z):
-    return finite_difference_y(w_func,x,y,z)
-
-def grad_w_z(x,y,z):
-    return finite_difference_z(w_func,x,y,z)
-
-coord = (1/np.sqrt(3)+eps,1/np.sqrt(3)+eps,1/np.sqrt(3)+eps)
-
-# print("u_x diff", grad_u_x(*coord) - du_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("u_y diff", grad_u_y(*coord) - du_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("u_z diff", grad_u_z(*coord) - du_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("v_x diff", grad_v_x(*coord) - dv_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("v_y diff", grad_v_y(*coord) - dv_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("v_z diff", grad_v_z(*coord) - dv_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("w_x diff", grad_w_x(*coord) - dw_dx(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("w_y diff", grad_w_y(*coord) - dw_dy(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-# print("w_z diff", grad_w_z(*coord) - dw_dz(coord[0],coord[1],coord[2],compute_lambda(coord[0],coord[1],coord[2])))
-
-
-# print("sigma_xx diff", (-pressure_func(*coord) + 2*grad_u_x(*coord)) - sigma_xx(coord[0],coord[1],coord[2]))
-
-sigma_xx_diff = []
-sigma_xy_diff = []
-sigma_xz_diff = [] # do not need to compute the symmetric values twice
-sigma_yy_diff = []
-sigma_yz_diff = []
-sigma_zz_diff = []
-lambda_values = []
-
-coords = []
-eps_range = np.logspace(-3, 4, 100)
-for i in eps_range:
-    val = (1/np.sqrt(3)+i,1/np.sqrt(3)+i,1/np.sqrt(3)+i)
-    coords.append(val)
-
-for i in coords:
-    idk = compute_lambda(*i)
-    lambda_values.append(idk)
-    idk1 = (-pressure_func(*i) + 2*grad_u_x(*i)) - sigma_xx(i[0],i[1],i[2])
-    sigma_xx_diff.append(idk1)
-    idk2 = (grad_u_y(*i) + grad_v_x(*i)) - sigma_xy(i[0], i[1], i[2])
-    sigma_xy_diff.append(idk2)
-    d= (grad_u_z(*i) + grad_w_x(*i)) - sigma_xz(i[0], i[1], i[2])
-    sigma_xz_diff.append(d)
-    e = (-pressure_func(*i) + 2*grad_v_y(*i)) - sigma_yy(i[0],i[1],i[2])
-    sigma_yy_diff.append(e)
-    f = (grad_v_z(*i) + grad_w_y(*i)) - sigma_yz(i[0], i[1], i[2])
-    sigma_yz_diff.append(f)
-    g = (-pressure_func(*i) + 2*grad_w_z(*i)) - sigma_zz(i[0],i[1],i[2])
-    sigma_zz_diff.append(g)
-
-
-plt.plot(lambda_values, sigma_xx_diff, label = "sigma_xx diff")
-plt.plot(lambda_values, sigma_xy_diff, label = "sigma_xy diff")
-plt.plot(lambda_values, sigma_xz_diff, label = "sigma_xz diff")
-plt.plot(lambda_values, sigma_yy_diff, label = "sigma_yy diff")
-plt.plot(lambda_values, sigma_yz_diff, label = "sigma_yz diff")
-plt.plot(lambda_values, sigma_zz_diff, label = "sigma_zz diff")
-plt.xlabel("lambda")
-plt.ylabel("sigma_ij diff")
-plt.xscale("log")
+plt.plot(t, sigma_history[:,0,1], label="sigma_12")
+plt.plot(t, sigma_history[:,0,2], label="sigma_13")
+plt.plot(t, sigma_history[:,1,2], label="sigma_23")
 plt.legend()
+plt.xlabel("time")
+plt.ylabel("sigma_ij")
 plt.show()
 
-
-
-
-
-
-# not sure why this is all different but by the same amount? maybe diff wrong? 
-# since u_x diff and du_dx diff is -106 and sigma_xx diff is -213, the pressure also has to be off then?
-# but n pressure diff is 0
-# thus problem is definitely between grad u and du_dx
-# either fd approx (checked and seemed okay...), analytically diff wrong (done multiple times, check again), typo in original eqn?
-
-#PROBLEM SOLVED
-
-# so now i have:
-# given u, i can numerically get u_x which gives me sigma_xx. this matches with my analytical formulation
-# given u, v, w, i can numerically get d/dx(sigma_xx) + d/dy(sigma_xy) + d/dx(sigma_xz) and this gives 0.
